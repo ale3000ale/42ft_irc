@@ -26,6 +26,7 @@ class Server
 		~Server();
 
 		void run();
+		bool checkPass(std::string &pass);
 	private:
 		std::string					_port;
 		std::string					_password;

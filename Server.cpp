@@ -80,7 +80,6 @@ void Server::run()
 						curr.buffer() += buf;
 						if (curr.buffer().find("\r\n") != std::string::npos)
 							curr.exec_cmd();
-						std::cout<<curr.buffer()<<"\n";
 					}
 				}
 			}
@@ -96,7 +95,7 @@ void Server::_addUser()
 	if ((new_fd = accept(this->_socket_fd, (struct sockaddr *)&clientaddr, &addrlen)) < 0)
 		return (perror("accept"));
 	_addFd(new_fd);
-	this->_users.push_back(User());
+	this->_users.push_back(User(new_fd, *this));
 }
 
 void Server::_deleteUser(int index)
@@ -114,4 +113,9 @@ void Server::_addFd(int new_fd)
 	tmp.fd = new_fd;
 	tmp.events = POLLIN; // Report ready to read on incoming connection
 	this->_pfds.push_back(tmp);
+}
+
+bool Server::checkPass(std::string& pass)
+{
+	return (pass == this->_password);
 }
