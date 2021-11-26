@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-Server::Server(std::string port, std::string password) : _port(port), _password(password)
+Server::Server(std::string port, std::string password) : _port(port), _password(password), _handler(password)
 {
     int yes=1;        // For setsockopt() SO_REUSEADDR, below
     int rv;
@@ -79,7 +79,7 @@ void Server::run()
 						User &curr = this->_users[i - 1];
 						curr.buffer() += buf;
 						if (curr.buffer().find("\r\n") != std::string::npos)
-							curr.exec_cmd();
+							_exec_cmd(curr);
 					}
 				}
 			}
@@ -95,7 +95,7 @@ void Server::_addUser()
 	if ((new_fd = accept(this->_socket_fd, (struct sockaddr *)&clientaddr, &addrlen)) < 0)
 		return (perror("accept"));
 	_addFd(new_fd);
-	this->_users.push_back(User(new_fd, *this));
+	this->_users.push_back(User(new_fd));
 }
 
 void Server::_deleteUser(int index)
@@ -118,4 +118,10 @@ void Server::_addFd(int new_fd)
 bool Server::checkPass(std::string& pass)
 {
 	return (pass == this->_password);
+}
+
+void Server::_exec_cmd(User& executor)
+{
+	this->_handler.handle(executor.buffer(), executor);
+	executor.buffer().clear();
 }

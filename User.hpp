@@ -3,16 +3,15 @@
 # define USER_HPP
 
 #include <string>
-#include "Command.hpp"
+#include "CommandHandler.hpp"
 
 class User
 {
 	public:
-		User(int fd, Server& server);
+		User(int fd);
 		~User();
 
 		std::string&	buffer();
-		void			exec_cmd();
 
 		bool		is_passed() const;
 		bool		is_registered() const;
@@ -20,7 +19,6 @@ class User
 		void		set_passed();
 		void		set_registered();
 	private:
-		Server&		_server;
 		int			_socket_fd;
 		bool		_pass_set;
 		bool		_registered;
