@@ -1,6 +1,8 @@
 
 #include "Server.hpp"
 
+#include <iostream>
+
 Server::Server(std::string port, std::string password) : _port(port), _password(password)
 {
     int yes=1;        // For setsockopt() SO_REUSEADDR, below
@@ -67,16 +69,18 @@ void Server::run()
 					int nbytes = recv(this->_pfds[i].fd, buf, sizeof(buf), 0);
 					if (nbytes <= 0)
 					{
+						/*if (nbytes)
+							ERROR*/
 						// Got error or connection closed by client
-						close(this->_pfds[i].fd); // closing client's fd
-						this->_pfds.erase(this->_pfds.begin() + i); // check if doing this i miss one fd
+						_deleteUser(i); // check if doing this i miss one fd
 					}
 					else
 					{
-						std::cout<<buf<<std::endl;
-						// We got some good data from a client
-
-						// check if command contains /r/n, then execute it
+						User &curr = this->_users[i - 1];
+						curr.buffer() += buf;
+						if (curr.buffer().find("\r\n") != std::string::npos)
+							curr.exec_cmd();
+						std::cout<<curr.buffer()<<"\n";
 					}
 				}
 			}
@@ -92,6 +96,14 @@ void Server::_addUser()
 	if ((new_fd = accept(this->_socket_fd, (struct sockaddr *)&clientaddr, &addrlen)) < 0)
 		return (perror("accept"));
 	_addFd(new_fd);
+	this->_users.push_back(User());
+}
+
+void Server::_deleteUser(int index)
+{
+	close(this->_pfds[index].fd); // closing client's fd
+	this->_pfds.erase(this->_pfds.begin() + index); 
+	this->_users.erase(this->_users.begin() + index - 1);
 }
 
 void Server::_addFd(int new_fd)

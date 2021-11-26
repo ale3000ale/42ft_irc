@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <cstdio>
 
-#include <iostream>
+#include "User.hpp"
 
 #define BACKLOG 10 // number of connections allowed on the incoming queue
 
@@ -31,10 +31,11 @@ class Server
 		std::string					_password;
 		int							_socket_fd;
 		std::vector<struct pollfd>	_pfds;
+		std::vector<User>			_users;
 
 		void						_addUser();
+		void 						_deleteUser(int index);
 		void						_addFd(int new_fd);
-
 };
 
 #endif
