@@ -1,7 +1,8 @@
 
 #include "CommandHandler.hpp"
+#include "Server.hpp"
 
-CommandHandler::CommandHandler(std::string server_pass) : _server_pass(server_pass) {}
+CommandHandler::CommandHandler(Server	&server): _server(server) {}
 
 
 void CommandHandler::_parse_cmd(std::string cmd_line)
@@ -43,6 +44,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 	// sarebbe figo avere una mappa chiave = comando(es PASS) valore = puntatore funzione corrispondente
 	if (this->_command == "PASS")
 		return (_handlePASS(owner));
+	else if (this->_command == "JOIN")
+		return (_handleJOIN(owner));
 }
 
 void CommandHandler::_handlePASS(User& owner)
@@ -51,6 +54,34 @@ void CommandHandler::_handlePASS(User& owner)
 		return ; //ERR_ALREADYREGISTERED (462)
 	if (!this->_params.size())
 		return ; //ERR_NEEDMOREPARAMS (461)
-	if (this->_server_pass == this->_params.front())
+	if (this->_server.checkPass(this->_params.front()))
 		owner.set_passed();
+}
+
+void CommandHandler::_handleJOIN(User& owner)
+{
+	if (_params.empty())
+		return ; //ERR_NEEDMOREPARAMS (461)
+	std::list<std::string> names;
+	std::list<std::string> keys;
+	while( _params.front() != "")
+	{
+		names.push_back(_params.front().substr(0, _params.front().find(",")));
+		_params.front().erase(0,  _params.front().find(",") + 1);
+	}
+	_params.pop_front();
+	if (!_params.empty())
+	{
+		while( _params.front() != "")
+			{
+				keys.push_back(_params.front().substr(0, _params.front().find(",")));
+				_params.front().erase(0,  _params.front().find(",") + 1);
+			}
+		_params.pop_front();
+	}
+	while(!names.empty())
+	{
+		//TODO: find channel
+	}
+	
 }

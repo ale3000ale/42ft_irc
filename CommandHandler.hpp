@@ -4,22 +4,23 @@
 #include <string>
 #include <list>
 
-#include "User.hpp"
+#include "Server.hpp"
 
 class CommandHandler
 {
 	public:
-		CommandHandler(std::string server_pass);
+		CommandHandler(Server	&server);
 
 		void handle(std::string cmd_line, User& owner);
 
 	private:
 		std::string				_command;
 		std::list<std::string>	_params;
-		std::string				_server_pass;
+		Server					&_server;
 
 		void 					_parse_cmd(std::string cmd_line);
 		void					_handlePASS(User &owner);
+		void					_handleJOIN(User &owner);
 };
 
 #endif

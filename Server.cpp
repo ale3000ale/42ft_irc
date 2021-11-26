@@ -125,3 +125,18 @@ void Server::_exec_cmd(User& executor)
 	this->_handler.handle(executor.buffer(), executor);
 	executor.buffer().clear();
 }
+
+Channel	Server::find_channel(std::string name)
+{
+	if(_channels.find(name) != _channels.end())
+		return _channels[name];
+}
+bool			Server::add_channel(Channel ch)
+{
+	if(_channels.find(ch.getName()) == _channels.end())
+	{
+		_channels[ch.getName()] = ch;
+		return true;
+	}
+	return false;
+}
