@@ -34,8 +34,11 @@ class Channel
 		~Channel();
 
 		Channel &		operator=( Channel const & rhs );
-		std::string 	getName() const;
 
+		int 			join_user(User &user);
+		int				join_user(User &user, std::string key);
+
+		std::string 	getName() const;
 	
 		class InvalidName: public std::exception
 		{ 

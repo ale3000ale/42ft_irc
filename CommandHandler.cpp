@@ -64,6 +64,8 @@ void CommandHandler::_handleJOIN(User& owner)
 		return ; //ERR_NEEDMOREPARAMS (461)
 	std::list<std::string> names;
 	std::list<std::string> keys;
+	int ck = 0;
+	
 	while( _params.front() != "")
 	{
 		names.push_back(_params.front().substr(0, _params.front().find(",")));
@@ -81,7 +83,29 @@ void CommandHandler::_handleJOIN(User& owner)
 	}
 	while(!names.empty())
 	{
-		//TODO: find channel
+		if (_server.exist_channel(names.front()));
+		{
+			Channel &chan = _server.get_channel(names.front());
+			if (keys.empty())
+				ck = chan.join_user(owner);
+			else
+			{
+				ck = chan.join_user(owner, keys.front());
+				keys.pop_front();
+			}
+			
+			names.pop_front();
+			
+			if (ck == 1)
+				//TODO: send 3 standard msg
+				std::cout << "join" << std::endl;
+			else
+				// TODO: send numeric msg
+		}
+		else
+		{
+			//TODO: create channel
+		}
 	}
 	
 }

@@ -126,11 +126,19 @@ void Server::_exec_cmd(User& executor)
 	executor.buffer().clear();
 }
 
-Channel	Server::find_channel(std::string name)
+bool	Server::exist_channel(std::string name)
 {
 	if(_channels.find(name) != _channels.end())
-		return _channels[name];
+		return true;
+	else
+		return false;
 }
+
+Channel			&Server::get_channel(std::string name)
+{
+	return _channels[name];
+}
+
 bool			Server::add_channel(Channel ch)
 {
 	if(_channels.find(ch.getName()) == _channels.end())

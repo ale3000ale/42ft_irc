@@ -51,6 +51,21 @@ std::ostream &			operator<<( std::ostream & o, Channel const & i )
 ** --------------------------------- METHODS ----------------------------------
 */
 
+int			Channel::join_user(User &user)
+{
+	_users.push_back(&user);
+	return(1);
+}
+
+int			Channel::join_user(User &user, std::string key)
+{
+	if (key == _key)
+	{
+		_users.push_back(&user);
+		return (1);
+	}
+	return(475);	//ERR_BADCHANNELKEY (475)
+}
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
@@ -66,5 +81,3 @@ const char *	Channel::InvalidName::what() const throw()
 }
 
 /* ************************************************************************** */
-
-aa

@@ -29,8 +29,9 @@ class Server
 
 		void 			run();
 		bool 			checkPass(std::string &pass);
-		Channel			find_channel(std::string name);
+		bool			exist_channel(std::string name);
 		bool			add_channel(Channel ch);
+		Channel			&get_channel(std::string name);
 	private:
 		std::string						_port;
 		std::string						_password; // dont know if  needed
