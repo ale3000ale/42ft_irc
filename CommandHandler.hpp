@@ -20,6 +20,8 @@ class CommandHandler
 
 		void 					_parse_cmd(std::string cmd_line);
 		void					_handlePASS(User &owner);
+		void					_handleNICK(User& owner);
+		void					_handleUSER(User& owner);
 		void					_handleJOIN(User &owner);
 };
 

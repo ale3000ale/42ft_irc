@@ -32,6 +32,7 @@ class Server
 		bool			exist_channel(std::string name);
 		bool			add_channel(Channel ch);
 		Channel			&get_channel(std::string name);
+		std::vector<User> const & getUserList() const;
 	private:
 		std::string						_port;
 		std::string						_password; // dont know if  needed

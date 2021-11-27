@@ -18,6 +18,13 @@ class User
 
 		void		set_passed();
 		void		set_registered();
+
+		std::string const &	getNick() const;
+		void				setNick(std::string nick);
+		std::string const &	getUsername() const;
+		void				setUsername(std::string nick);
+		//std::string const &	getRealname() const;
+		void				setRealname(std::string nick);
 	private:
 		int			_socket_fd;
 		bool		_pass_set;

@@ -13,3 +13,18 @@ bool		User::is_registered() const { return(this->_registered); };
 
 void		User::set_passed() { this->_pass_set= true; }
 void		User::set_registered() { this->_registered = true; }
+
+std::string const &	User::getNick() const
+{ return (this->_nickname); }
+
+void				User::setNick(std::string nick)
+{ this->_nickname = nick; }
+
+std::string const &	User::getUsername() const
+{ return (this->_username); }
+
+void				User::setUsername(std::string username)
+{ this->_username = username; }
+
+void				User::setRealname(std::string realname)
+{ this->_realname = realname; }

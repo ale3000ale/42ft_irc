@@ -44,6 +44,10 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 	// sarebbe figo avere una mappa chiave = comando(es PASS) valore = puntatore funzione corrispondente
 	if (this->_command == "PASS")
 		return (_handlePASS(owner));
+	if (this->_command == "NICK")
+		return (_handleNICK(owner));
+	if (this->_command == "USER")
+		return (_handleUSER(owner));
 	else if (this->_command == "JOIN")
 		return (_handleJOIN(owner));
 }
@@ -56,6 +60,36 @@ void CommandHandler::_handlePASS(User& owner)
 		return ; //ERR_NEEDMOREPARAMS (461)
 	if (this->_server.checkPass(this->_params.front()))
 		owner.set_passed();
+}
+
+void CommandHandler::_handleNICK(User& owner)
+{
+	if (!this->_params.size())
+		return ; // ERR_NONICKNAMEGIVEN (431)
+	std::string& nick = this->_params.front();
+	std::vector<User> const & users = this->_server.getUserList();
+	for (u_int i = 0; i < users.size(); i++)
+	{
+		if (users[i].getNick() == nick)
+			return ; // ERR_NICKNAMEINUSE (433)
+	}
+	owner.setNick(nick);
+}
+
+void CommandHandler::_handleUSER(User& owner)
+{
+	if (owner.is_registered())
+		return ; //ERR_ALREADYREGISTERED (462)
+	if (this->_params.size() != 4)
+		return ; // ERR_NEEDMOREPARAMS (461)
+	std::string username = this->_params.front();
+	if (username.empty()) // i think this case wont ever occur
+		return ; // ERR_NEEDMOREPARAMS (461)
+	std::string realname = this->_params.back();
+	owner.setUsername(username);
+	owner.setRealname(realname);
+	owner.set_registered();
+	_numeric_reply(1, owner); // RPL_WELCOME
 }
 
 void CommandHandler::_handleJOIN(User& owner)
@@ -107,5 +141,20 @@ void CommandHandler::_handleJOIN(User& owner)
 			//TODO: create channel
 		}
 	}
-	
+}
+
+void	_numeric_reply(int val, User& owner)
+{
+	std::string msg;
+
+	switch (val)
+	{
+		case 1: // RPL_WELCOME
+			msg = ":myIRCServer 001 " + owner.getNick() + " :Welcome to the Internet Relay Network " + owner.getNick() + "!" + owner.getUsername() + "@"; // need to add user host
+			break;
+		
+		default:
+			break;
+	}
+
 }

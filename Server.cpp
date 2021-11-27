@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-Server::Server(std::string port, std::string password) : _port(port), _password(password), _handler(password)
+Server::Server(std::string port, std::string password) : _port(port), _password(password), _handler(*this)
 {
     int yes=1;        // For setsockopt() SO_REUSEADDR, below
     int rv;
@@ -118,6 +118,11 @@ void Server::_addFd(int new_fd)
 bool Server::checkPass(std::string& pass)
 {
 	return (pass == this->_password);
+}
+
+std::vector<User> const & Server::getUserList() const
+{
+	return (this->_users);
 }
 
 void Server::_exec_cmd(User& executor)
