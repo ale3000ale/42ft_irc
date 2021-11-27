@@ -2,7 +2,7 @@
 #include "User.hpp"
 
 
-User::User(int fd) : _socket_fd(fd), _pass_set(false), _registered(false) {}
+User::User(int fd, std::string host) : _socket_fd(fd), _host(host), _pass_set(false), _registered(false) {}
 
 User::~User() {};
 
@@ -13,6 +13,12 @@ bool		User::is_registered() const { return(this->_registered); };
 
 void		User::set_passed() { this->_pass_set= true; }
 void		User::set_registered() { this->_registered = true; }
+
+std::string const &	User::getHost() const
+{ return (this->_host); }
+
+int	User::getSocket() const
+{ return (this->_socket_fd); };
 
 std::string const &	User::getNick() const
 { return (this->_nickname); }

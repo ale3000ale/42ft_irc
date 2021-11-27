@@ -4,7 +4,9 @@
 #include <string>
 #include <list>
 
-#include "Server.hpp"
+#include "User.hpp"
+
+class Server;
 
 class CommandHandler
 {
@@ -22,7 +24,10 @@ class CommandHandler
 		void					_handlePASS(User &owner);
 		void					_handleNICK(User& owner);
 		void					_handleUSER(User& owner);
+		void					_handlePING(User& owner);
 		void					_handleJOIN(User &owner);
+
+		void					_numeric_reply(int val, User& owner);
 };
 
 #endif

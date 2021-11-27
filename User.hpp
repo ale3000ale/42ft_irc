@@ -3,12 +3,11 @@
 # define USER_HPP
 
 #include <string>
-#include "CommandHandler.hpp"
 
 class User
 {
 	public:
-		User(int fd);
+		User(int fd, std::string host);
 		~User();
 
 		std::string&	buffer();
@@ -19,6 +18,8 @@ class User
 		void		set_passed();
 		void		set_registered();
 
+		std::string const &	getHost() const;
+		int	getSocket() const;
 		std::string const &	getNick() const;
 		void				setNick(std::string nick);
 		std::string const &	getUsername() const;
@@ -27,6 +28,7 @@ class User
 		void				setRealname(std::string nick);
 	private:
 		int			_socket_fd;
+		std::string _host;
 		bool		_pass_set;
 		bool		_registered;
 		std::string _nickname;

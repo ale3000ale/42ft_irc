@@ -7,7 +7,7 @@ CommandHandler::CommandHandler(Server	&server): _server(server) {}
 
 void CommandHandler::_parse_cmd(std::string cmd_line)
 {
-	cmd_line = cmd_line.substr(0, cmd_line.length() - 2); //deleting trailing \r\n
+	//cmd_line = cmd_line.substr(0, cmd_line.length() - 2); //deleting trailing \r\n
 	if (cmd_line.empty())
 		return ;
 	int pos = cmd_line.find(" ");
@@ -34,22 +34,26 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 
 void CommandHandler::handle(std::string cmd_line, User& owner)
 {
+	std::cout<<"command: "<<cmd_line<<std::endl;
 	_parse_cmd(cmd_line);
 	if (this->_command.empty())
 		return ;
-	if (!owner.is_passed() && this->_command != "PASS")
+	/*if (!owner.is_passed() && this->_command != "PASS")
 		return ; // TODO send numeric reply
 	if (!owner.is_registered() && (this->_command != "NICK" || this->_command != "USER"))
-		return ; // TODO send numeric reply
+		return ; // TODO send numeric reply*/
 	// sarebbe figo avere una mappa chiave = comando(es PASS) valore = puntatore funzione corrispondente
 	if (this->_command == "PASS")
-		return (_handlePASS(owner));
-	if (this->_command == "NICK")
-		return (_handleNICK(owner));
-	if (this->_command == "USER")
-		return (_handleUSER(owner));
+		_handlePASS(owner);
+	else if (this->_command == "NICK")
+		_handleNICK(owner);
+	else if (this->_command == "USER")
+		_handleUSER(owner);
+	else if (this->_command == "PING")
+		_handlePING(owner);
 	else if (this->_command == "JOIN")
-		return (_handleJOIN(owner));
+		_handleJOIN(owner);
+	this->_params.clear();
 }
 
 void CommandHandler::_handlePASS(User& owner)
@@ -89,12 +93,23 @@ void CommandHandler::_handleUSER(User& owner)
 	owner.setUsername(username);
 	owner.setRealname(realname);
 	owner.set_registered();
+	std::cout<<"***REGISTERED!\n***";
 	_numeric_reply(1, owner); // RPL_WELCOME
+}
+
+void CommandHandler::_handlePING(User& owner)
+{
+	if (!this->_params.size())
+		return ; // ERR_NONICKNAMEGIVEN (431)
+	std::cout<<"PONG TEST: "<<this->_params.front()<<std::endl;
+	std::string msg = ":myIRCServer PONG myIRCServer " + this->_params.front() + "\r\n";
+	this->_server.send_msg(msg, owner);
 }
 
 void CommandHandler::_handleJOIN(User& owner)
 {
-	if (_params.empty())
+	std::string test = owner.getNick();
+	/*if (_params.empty())
 		return ; //ERR_NEEDMOREPARAMS (461)
 	std::list<std::string> names;
 	std::list<std::string> keys;
@@ -140,21 +155,21 @@ void CommandHandler::_handleJOIN(User& owner)
 		{
 			//TODO: create channel
 		}
-	}
+	}*/
 }
 
-void	_numeric_reply(int val, User& owner)
+void	CommandHandler::_numeric_reply(int val, User& owner)
 {
-	std::string msg;
+	std::string msg = ":myIRCServer ";
 
 	switch (val)
 	{
 		case 1: // RPL_WELCOME
-			msg = ":myIRCServer 001 " + owner.getNick() + " :Welcome to the Internet Relay Network " + owner.getNick() + "!" + owner.getUsername() + "@"; // need to add user host
+			msg = "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
 			break;
-		
 		default:
 			break;
 	}
-
+	msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + "\r\n";
+	this->_server.send_msg(msg, owner);
 }

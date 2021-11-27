@@ -78,6 +78,7 @@ void Server::run()
 					{
 						User &curr = this->_users[i - 1];
 						curr.buffer() += buf;
+						//std::cout<<curr.buffer()<<" size:"<<curr.buffer().size()<<"\n";
 						if (curr.buffer().find("\r\n") != std::string::npos)
 							_exec_cmd(curr);
 					}
@@ -95,7 +96,14 @@ void Server::_addUser()
 	if ((new_fd = accept(this->_socket_fd, (struct sockaddr *)&clientaddr, &addrlen)) < 0)
 		return (perror("accept"));
 	_addFd(new_fd);
-	this->_users.push_back(User(new_fd));
+	char remoteIP[INET6_ADDRSTRLEN];
+	struct sockaddr *casted_addr = (struct sockaddr*)&clientaddr;
+	if (casted_addr->sa_family == AF_INET)
+    	inet_ntop(AF_INET, &(((struct sockaddr_in*)casted_addr)->sin_addr), remoteIP, INET_ADDRSTRLEN);
+    else
+		inet_ntop(AF_INET6, &(((struct sockaddr_in6*)casted_addr)->sin6_addr), remoteIP, INET6_ADDRSTRLEN);
+	this->_users.push_back(User(new_fd, remoteIP));
+
 }
 
 void Server::_deleteUser(int index)
@@ -127,8 +135,19 @@ std::vector<User> const & Server::getUserList() const
 
 void Server::_exec_cmd(User& executor)
 {
-	this->_handler.handle(executor.buffer(), executor);
-	executor.buffer().clear();
+	std::string& buffer = executor.buffer();
+	std::cout <<"1: "<<executor.buffer()<<"\n";
+	int pos = buffer.find("\r\n");
+	do
+	{
+		std::cout <<"2: "<<buffer.substr(0, pos)<<"\n";
+		this->_handler.handle(buffer.substr(0, pos), executor);
+		buffer.erase(0, pos + 2);
+		std::cout <<"3: "<<buffer<<"\n";
+		pos = buffer.find("\r\n");
+	} while (pos != -1);
+	std::cout <<"4: "<<executor.buffer()<<"\n";
+	//executor.buffer().clear();
 }
 
 bool	Server::exist_channel(std::string name)
@@ -152,4 +171,10 @@ bool			Server::add_channel(Channel ch)
 		return true;
 	}
 	return false;
+}
+
+void	Server::send_msg(std::string& msg, User& target)
+{
+	if (send(target.getSocket(), msg.c_str(), msg.length(), 0) < 0)
+        perror("send");
 }

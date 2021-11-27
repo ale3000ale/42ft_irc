@@ -17,6 +17,7 @@
 
 #include "User.hpp"
 #include "Channel.hpp"
+#include "CommandHandler.hpp"
 #include <map>
 
 #define BACKLOG 10 // number of connections allowed on the incoming queue
@@ -33,6 +34,7 @@ class Server
 		bool			add_channel(Channel ch);
 		Channel			&get_channel(std::string name);
 		std::vector<User> const & getUserList() const;
+		void			send_msg(std::string& msg, User& target);
 	private:
 		std::string						_port;
 		std::string						_password; // dont know if  needed
