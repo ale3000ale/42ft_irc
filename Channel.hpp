@@ -16,7 +16,7 @@ class Channel
 		std::string		_key;
 		std::string 	_topic;
 		//User 			&_founder;
-		std::vector<User *> _users;
+		std::vector<std::pair<char,User *> > _users;
 
 	public:
 		Channel();
@@ -26,9 +26,9 @@ class Channel
 
 		//Channel &		operator=( Channel const & rhs );
 
-		int 			join_user(User &user);
-		int				join_user(User &user, std::string key);
+		int				join_user(User &user, std::string key , char status);
 
+		std::string		getStrUsers();
 		std::string 	getName() const;
 	
 		class InvalidName: public std::exception
