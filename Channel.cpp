@@ -6,14 +6,12 @@
 
 Channel::Channel() {}
 
-Channel::Channel(std::string name, User &us) : _name(name), _key(""), _topic("")/*, _founder(us)*/
+Channel::Channel(std::string name) : _name(name), _key(""), _topic("")/*, _founder(us)*/
 {
-	_users.push_back(&us);
 }
 
-Channel::Channel(std::string name, std::string key, User &us): _name(name), _key(key), _topic("")/*, _founder(us)*/
+Channel::Channel(std::string name, std::string key): _name(name), _key(key), _topic("")/*, _founder(us)*/
 {
-	_users.push_back(&us);
 }
 
 
@@ -51,7 +49,7 @@ Channel::~Channel()
 ** --------------------------------- METHODS ----------------------------------
 */
 
-int			Channel::join_user(User &user, std::string key , char status)
+int			Channel::join_user(User &user, std::string key , char status = 0)
 {
 	if (key == _key)
 	{
@@ -64,8 +62,9 @@ int			Channel::join_user(User &user, std::string key , char status)
 std::string		Channel::getStrUsers()
 {
 	std::string s = "";
-	for(int i= 0 ; i < _users.size(); i++)
-		s += _users[i].first  + *(_users[i].second)->getNick + ! + 
+	for(size_t i= 0 ; i < _users.size(); i++)
+		s += _users[i].first  + (_users[i].second)->getNick() + " ";
+	return s;
 }
 
 /*
@@ -73,6 +72,17 @@ std::string		Channel::getStrUsers()
 */
 	std::string 	Channel::getName() const
 	{return _name;}
+
+	void 			Channel::setStatus( std::string nick, char status = 0)
+	{
+		size_t i= 0;
+		for( ; i < _users.size(); i++)
+		{
+			if (nick == (_users[i].second)->getNick())
+				break;
+		}
+		_users[i].first = status;
+	}
 /*
 ** --------------------------------- EXCEPTION --------------------------------
 */

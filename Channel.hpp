@@ -15,13 +15,13 @@ class Channel
 		std::string 	_name;
 		std::string		_key;
 		std::string 	_topic;
-		//User 			&_founder;
+		//User 			*_founder;
 		std::vector<std::pair<char,User *> > _users;
 
 	public:
 		Channel();
-		Channel(std::string name, User &us);
-		Channel(std::string name, std::string key, User &us);
+		Channel(std::string name);
+		Channel(std::string name, std::string key);
 		~Channel();
 
 		//Channel &		operator=( Channel const & rhs );
@@ -30,6 +30,7 @@ class Channel
 
 		std::string		getStrUsers();
 		std::string 	getName() const;
+		void 			setStatus( std::string nick, char status);
 	
 		class InvalidName: public std::exception
 		{ 

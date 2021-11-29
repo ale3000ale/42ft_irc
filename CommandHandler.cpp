@@ -158,31 +158,30 @@ void CommandHandler::_handleJOIN(User& owner)
 
 	while(!names.empty())
 	{
+		char stat  = 0;
 		std::cout << "EXIST?: "<< std::endl;
 		if (!_server.exist_channel(names.front()))
 		{
 			std::cout << "CREATE?: "<< std::endl;
-			Channel ch(names.front(), keys.front(), owner);
+			Channel ch(names.front(), keys.front());
 			_server.add_channel(ch);
 			std::cout << "ADDED?: "<< std::endl;
+			stat = '@';
 		}
 
 		std::cout << "JOINING"<< std::endl;
 		Channel &chan = _server.get_channel(names.front());
 		if (keys.empty())
-			ck = chan.join_user(owner);
-		else
-		{
-			ck = chan.join_user(owner, keys.front());
-			keys.pop_front();
-		}
+			ck = chan.join_user(owner, keys.front(), stat);
+			if (!keys.empty())
+				keys.pop_front();
+
 		names.pop_front();
 
 		if (ck == 1)
 		{
-			std::string msg = owner.getUsername() + "!" +  owner.getUsername() + "@" + owner.getHost() + " JOIN :" + chan.getName() + "\r\n";
+			std::string msg = owner.getNick() + "!" +  owner.getNick() + "@" + owner.getHost() + " JOIN " + chan.getName() + "\r\n";
 			_server.send_msg(msg, owner);
-			std::cout << "join" << std::endl;
 		}
 		else
 		{
@@ -192,7 +191,18 @@ void CommandHandler::_handleJOIN(User& owner)
 	}
 }
 
-void	CommandHandler::_numeric_reply(int val, User& owner, std::string ch = "")
+void CommandHandler::_handleQUIT(User& owner)
+{
+	std::string reason = (_params.size() == 1) ? _params.front() : owner.getNick();
+	std::string msg = "ERROR :Closing Link: " + owner.getNick() + "[" + owner.getHost() + "] (Quit: " + reason + ")\r\n";
+	this->_server.send_msg(msg, owner);
+	/*
+		MAY ADD SENDING MESSAGE TO OTHER CLIENTS THAT SHARE CHANNEL WITH EXITING USER
+	*/
+}
+
+
+void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 {
 	std::string msg = ":myIRCServer ";
 
@@ -202,16 +212,34 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string ch = "")
 			msg += "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
 			break;
 		case 353: // RPL_NAMREPLY
-			msg += "353 " + owner.getNick() + " =" + ch + " :";
-			msg += _server.get_channel(ch).getStrUsers();
+			msg += "353 " + owner.getNick() + " =" + extra + " :";
+			msg += _server.get_channel(extra).getStrUsers();
 			break;
 		case 366: // RPL_WELCOME
 			msg += "366 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
 			break;
+		case 421: // ERR_UNKNOWNCOMMAND 
+			msg += "421 " + owner.getNick() + " " + extra + " :Unknown command";
+			break;
+		case 431: // ERR_NONICKNAMEGIVEN
+			msg += "431 " + owner.getNick() + " :No nickname given";
+			break;
+		case 433: // ERR_NICKNAMEINUSE 
+			msg += "433 " + owner.getNick() + " " + extra + " :Nickname is already in use"; 
+			break;
+		case 451: // ERR_NOTREGISTERED
+			msg += "451 " + extra + " :You have not registered";
+			break;
+		case 461: // ERR_NEEDMOREPARAMS 
+			msg += "461 " + owner.getNick() + " " + extra + " :Not enough parameters"; 
+			break;
+		case 462: // ERR_ALREADYREGISTERED
+			msg += "462 " + owner.getNick() + " :You may not reregister"; 
+			break;
 		default:
 			break;
 	}
-	msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + "\r\n";
+	msg += "\r\n";
 	//std::cout<<msg;
 	this->_server.send_msg(msg, owner);
 }
