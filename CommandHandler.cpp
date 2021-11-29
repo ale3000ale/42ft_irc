@@ -22,6 +22,7 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 			if (cmd_line.empty())
 				break ;
 			this->_params.push_back(cmd_line);
+			cmd_line.erase(0, -1);
 		}
 		else
 		{
@@ -68,8 +69,11 @@ void CommandHandler::_handlePASS(User& owner)
 
 void CommandHandler::_handleNICK(User& owner)
 {
+	bool welcomed = true;
 	if (!this->_params.size())
 		return ; // ERR_NONICKNAMEGIVEN (431)
+	if (owner.getNick().empty())
+		welcomed = false;
 	std::string& nick = this->_params.front();
 	std::vector<User> const & users = this->_server.getUserList();
 	for (u_int i = 0; i < users.size(); i++)
@@ -78,12 +82,16 @@ void CommandHandler::_handleNICK(User& owner)
 			return ; // ERR_NICKNAMEINUSE (433)
 	}
 	owner.setNick(nick);
+	if (!welcomed)
+		_numeric_reply(1, owner);
 }
 
 void CommandHandler::_handleUSER(User& owner)
 {
 	if (owner.is_registered())
 		return ; //ERR_ALREADYREGISTERED (462)
+	/*for (std::list<std::string>::iterator i =_params.begin(); i != _params.cend() ; i++)
+		std::cout<<*i<<" --- ";*/
 	if (this->_params.size() != 4)
 		return ; // ERR_NEEDMOREPARAMS (461)
 	std::string username = this->_params.front();
@@ -93,16 +101,16 @@ void CommandHandler::_handleUSER(User& owner)
 	owner.setUsername(username);
 	owner.setRealname(realname);
 	owner.set_registered();
-	std::cout<<"***REGISTERED!\n***";
-	_numeric_reply(1, owner); // RPL_WELCOME
+	if (!owner.getNick().empty())
+		_numeric_reply(1, owner); // RPL_WELCOME
 }
 
 void CommandHandler::_handlePING(User& owner)
 {
 	if (!this->_params.size())
 		return ; // ERR_NONICKNAMEGIVEN (431)
-	std::cout<<"PONG TEST: "<<this->_params.front()<<std::endl;
-	std::string msg = ":myIRCServer PONG myIRCServer " + this->_params.front() + "\r\n";
+	//std::cout<<"PONG TEST: "<<this->_params.front()<<std::endl;
+	std::string msg = ":myIRCServer PONG myIRCServer :" + this->_params.front() + "\r\n";
 	this->_server.send_msg(msg, owner);
 }
 
@@ -165,11 +173,12 @@ void	CommandHandler::_numeric_reply(int val, User& owner)
 	switch (val)
 	{
 		case 1: // RPL_WELCOME
-			msg = "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
+			msg += "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
 			break;
 		default:
 			break;
 	}
 	msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + "\r\n";
+	//std::cout<<msg;
 	this->_server.send_msg(msg, owner);
 }

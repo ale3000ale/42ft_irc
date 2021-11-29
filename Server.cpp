@@ -136,17 +136,17 @@ std::vector<User> const & Server::getUserList() const
 void Server::_exec_cmd(User& executor)
 {
 	std::string& buffer = executor.buffer();
-	std::cout <<"1: "<<executor.buffer()<<"\n";
+	//std::cout <<"1: "<<executor.buffer()<<"\n";
 	int pos = buffer.find("\r\n");
 	do
 	{
-		std::cout <<"2: "<<buffer.substr(0, pos)<<"\n";
+		//std::cout <<"2: "<<buffer.substr(0, pos)<<"\n";
 		this->_handler.handle(buffer.substr(0, pos), executor);
 		buffer.erase(0, pos + 2);
-		std::cout <<"3: "<<buffer<<"\n";
+		//std::cout <<"3: "<<buffer<<"\n";
 		pos = buffer.find("\r\n");
 	} while (pos != -1);
-	std::cout <<"4: "<<executor.buffer()<<"\n";
+	//std::cout <<"4: "<<executor.buffer()<<"\n";
 	//executor.buffer().clear();
 }
 
