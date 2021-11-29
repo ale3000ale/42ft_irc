@@ -51,20 +51,21 @@ Channel::~Channel()
 ** --------------------------------- METHODS ----------------------------------
 */
 
-int			Channel::join_user(User &user)
-{
-	_users.push_back(&user);
-	return(1);
-}
-
-int			Channel::join_user(User &user, std::string key)
+int			Channel::join_user(User &user, std::string key , char status)
 {
 	if (key == _key)
 	{
-		_users.push_back(&user);
+		_users.push_back(std::pair<char,User *>(status, &user));
 		return (1);
 	}
 	return(475);	//ERR_BADCHANNELKEY (475)
+}
+
+std::string		Channel::getStrUsers()
+{
+	std::string s = "";
+	for(int i= 0 ; i < _users.size(); i++)
+		s += _users[i].first  + *(_users[i].second)->getNick + ! + 
 }
 
 /*
