@@ -35,6 +35,7 @@ class Server
 		Channel			&get_channel(std::string name);
 		std::vector<User> const & getUserList() const;
 		void			send_msg(std::string& msg, User& target);
+		void 			deleteUser(std::string nickname);
 	private:
 		std::string						_port;
 		std::string						_password; // dont know if  needed

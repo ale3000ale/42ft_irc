@@ -26,8 +26,10 @@ class CommandHandler
 		void					_handleUSER(User& owner);
 		void					_handlePING(User& owner);
 		void					_handleJOIN(User &owner);
+		void					_handlePRIVMSG(User &owner);
+		void					_handleQUIT(User &owner);
 
-		void					_numeric_reply(int val, User& owner);
+		void					_numeric_reply(int val, User& owner, std::string extra);
 };
 
 #endif

@@ -113,6 +113,15 @@ void Server::_deleteUser(int index)
 	this->_users.erase(this->_users.begin() + index - 1);
 }
 
+void Server::deleteUser(std::string nick)
+{
+	for (u_int i = 0; i < this->_users.size(); i++)
+	{
+		if (this->_users[i].getNick() == nick)
+			return (_deleteUser(i));
+	}
+}
+
 void Server::_addFd(int new_fd)
 {
 	struct pollfd tmp;
