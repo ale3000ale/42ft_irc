@@ -26,6 +26,9 @@ class User
 		void				setUsername(std::string nick);
 		//std::string const &	getRealname() const;
 		void				setRealname(std::string nick);
+		bool				isAway() const;
+		void				setAway(bool away, std::string msg = "");
+		std::string const & getAwayMsg() const;
 	private:
 		int			_socket_fd;
 		std::string _host;
@@ -35,6 +38,8 @@ class User
 		std::string _username;
 		std::string _realname;
 		std::string _buffer;
+		bool		_away;
+		std::string	_away_msg;
 };
 
 
