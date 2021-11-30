@@ -2,7 +2,7 @@
 #include "User.hpp"
 
 
-User::User(int fd, std::string host) : _socket_fd(fd), _host(host), _pass_set(false), _registered(false) {}
+User::User(int fd, std::string host) : _socket_fd(fd), _host(host), _pass_set(false), _registered(false), _away(false) {}
 
 User::~User() {};
 
@@ -34,3 +34,18 @@ void				User::setUsername(std::string username)
 
 void				User::setRealname(std::string realname)
 { this->_realname = realname; }
+
+bool				User::isAway() const
+{ return (this->_away); }
+
+void				User::setAway(bool away, std::string msg)
+{
+	this->_away = away;
+	if (away)
+		this->_away_msg = msg;
+	else
+		this->_away_msg.clear();
+}
+
+std::string const & User::getAwayMsg() const
+{ return (this->_away_msg); }

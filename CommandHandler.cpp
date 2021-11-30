@@ -57,6 +57,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleJOIN(owner);
 	else if (this->_command == "PRIVMSG")
 		_handlePRIVMSG(owner);
+	else if (this->_command == "AWAY")
+		_handleAWAY(owner);
 	else if (this->_command == "QUIT")
 		_handleQUIT(owner);
 	else
@@ -86,8 +88,13 @@ void CommandHandler::_handleNICK(User& owner)
 		if (users[i].getNick() == nick)
 			return _numeric_reply(433, owner, nick); ; // ERR_NICKNAMEINUS
 	}
+	std::string old_nick = owner.getNick();
 	owner.setNick(nick);
-	// TODO ack
+	if (old_nick != "")
+	{
+		std::string msg = ":" + old_nick + "!" + owner.getUsername() + "@" + owner.getHost() + " NICK :" + owner.getNick() + "\r\n";
+		this->_server.send_msg(msg, owner);
+	}
 	/* 
 	 MAY ADD NUMERIC REPLY 2 3 4 5
 	*/
@@ -146,6 +153,8 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 		{
 			if (users[i].getNick() == curr_nick)
 			{
+				if (users[i].isAway())
+					_numeric_reply(301, owner, curr_nick);
 				std::string msg = head + curr_nick + text + "\r\n";
 				this->_server.send_msg(msg, users[i]);
 				break ;
@@ -155,6 +164,20 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 		if (i == users.size())
 			_numeric_reply(401, owner, curr_nick);
 		targets.erase(0, (pos != -1) ? pos + 1 : pos);
+	}
+}
+
+void CommandHandler::_handleAWAY(User& owner)
+{
+	if (!this->_params.size())
+	{
+		owner.setAway(false);
+		_numeric_reply(305, owner); // RPL_UNAWAY
+	}
+	else
+	{
+		owner.setAway(true, this->_params.front());
+		_numeric_reply(306, owner); // RPL_NOWAWAY
 	}
 }
 
@@ -225,7 +248,7 @@ void CommandHandler::_handleQUIT(User& owner)
 	std::string msg = "ERROR :Closing Link: " + owner.getNick() + "[" + owner.getHost() + "] (Quit: " + reason + ")\r\n";
 	this->_server.send_msg(msg, owner);
 	/*
-		MAY ADD SENDING MESSAGE TO OTHER CLIENTS THAT SHARE CHANNEL WITH EXITING USER
+		ADD SENDING MESSAGE TO OTHER CLIENTS THAT SHARE CHANNEL WITH EXITING USER
 	*/
 }
 
@@ -243,6 +266,15 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 		case 332: // RPL_TOPIC
 			msg += "332 " + owner.getNick() + " " + extra + " :";
 			msg += _server.get_channel(extra).getTopic();
+		case 301: // RPL_AWAY
+			msg += "301 " + owner.getNick() + " " + extra + " :" + owner.getAwayMsg();
+			break;
+		case 305: // RPL_UNAWAY
+			msg += "305 " + owner.getNick() + " :You are no longer marked as being away";
+			break;
+		case 306: // RPL_NOWAWAY
+			msg += "306 " + owner.getNick() + " :You have been marked as being away";
+
 			break;
 		case 353: // RPL_NAMREPLY
 			msg += "353 " + owner.getNick() + " = " + extra + " :";
