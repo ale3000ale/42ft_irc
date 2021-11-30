@@ -68,7 +68,7 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 		_users.push_back(std::pair<char,User *>(status, &user));
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + "\r\n";
 		this->sendAll(msg);
-		//_server->getHendler()._numeric_reply(332, user, _name);
+		//_server->getHendler()._numeric_reply(332, user, _name); ONLY TO DO IF TOPIC IS SET
 		_server->getHendler()._numeric_reply(353, user, _name);
 		_server->getHendler()._numeric_reply(366, user, _name);
 		return (1);

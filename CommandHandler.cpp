@@ -148,6 +148,10 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 	{
 		int pos = targets.find(",");
 		std::string curr_nick = targets.substr(0, pos);
+		if (curr_nick[0] == '#')
+		{
+			// HANDLE USER TO CHANNEL MSGS
+		}
 		u_int i = 0;
 		while (i < users.size())
 		{
@@ -247,6 +251,7 @@ void CommandHandler::_handleQUIT(User& owner)
 	std::string reason = (_params.size() == 1) ? _params.front() : owner.getNick();
 	std::string msg = "ERROR :Closing Link: " + owner.getNick() + "[" + owner.getHost() + "] (Quit: " + reason + ")\r\n";
 	this->_server.send_msg(msg, owner);
+	this->_server.deleteUser(owner.getNick());
 	/*
 		ADD SENDING MESSAGE TO OTHER CLIENTS THAT SHARE CHANNEL WITH EXITING USER
 	*/
