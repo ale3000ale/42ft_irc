@@ -31,6 +31,7 @@ class CommandHandler
 		void					_handlePRIVMSG(User &owner);
 		void					_handleQUIT(User &owner);
 
+	public:
 		void					_numeric_reply(int val, User& owner, std::string extra = "");
 };
 

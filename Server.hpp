@@ -22,6 +22,7 @@
 
 #define BACKLOG 10 // number of connections allowed on the incoming queue
 
+
 class Server
 {
 	public:
@@ -36,6 +37,8 @@ class Server
 		std::vector<User> const & getUserList() const;
 		void			send_msg(std::string& msg, User const & target);
 		void 			deleteUser(std::string nickname);
+		CommandHandler	getHendler() const;
+
 	private:
 		std::string						_port;
 		std::string						_password; // dont know if  needed

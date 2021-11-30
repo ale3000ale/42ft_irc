@@ -1,5 +1,6 @@
 
 #include "Server.hpp"
+#include "Channel.hpp"
 
 #include <iostream>
 
@@ -176,7 +177,7 @@ bool			Server::add_channel(Channel ch)
 {
 	if(_channels.find(ch.getName()) == _channels.end())
 	{
-		_channels[ch.getName()] = ch;
+		_channels.insert ( std::pair<std::string ,Channel>(ch.getName(), ch) );
 		return true;
 	}
 	return false;
@@ -186,4 +187,9 @@ void	Server::send_msg(std::string& msg, User const & target)
 {
 	if (send(target.getSocket(), msg.c_str(), msg.length(), 0) < 0)
         perror("send");
+}
+
+CommandHandler	Server::getHendler() const
+{
+	return (_handler);
 }

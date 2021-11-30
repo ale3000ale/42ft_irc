@@ -161,14 +161,11 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 void CommandHandler::_handleJOIN(User& owner)
 {
 	
-	std::string test = owner.getNick();
 	if (_params.empty())
 		return ; //ERR_NEEDMOREPARAMS (461)
 	std::list<std::string> names;
 	std::list<std::string> keys;
 	int pos;
-	int ck = 0;
-	
 	
 	while( _params.front() != "")
 	{
@@ -176,7 +173,6 @@ void CommandHandler::_handleJOIN(User& owner)
 		names.push_back(_params.front().substr(0, pos));
 		_params.front().erase(0, (pos != -1) ? pos + 1 : pos);
 	}
-	
 	
 	_params.pop_front();
 	if (!_params.empty())
@@ -207,7 +203,7 @@ void CommandHandler::_handleJOIN(User& owner)
 		if (!_server.exist_channel(names.front()))
 		{
 			std::cout << "CREATE?: "<< std::endl;
-			Channel ch(names.front(), keys.front());
+			Channel ch(names.front(), keys.front(), _server);
 			_server.add_channel(ch);
 			std::cout << "ADDED?: "<< std::endl;
 			stat = '@';
@@ -215,23 +211,11 @@ void CommandHandler::_handleJOIN(User& owner)
 
 		std::cout << "JOINING"<< std::endl;
 		Channel &chan = _server.get_channel(names.front());
-		if (keys.empty())
-			ck = chan.join_user(owner, keys.front(), stat);
-			if (!keys.empty())
-				keys.pop_front();
-
+		//if (keys.empty())
+		chan.join_user(owner, keys.front(), stat);
+		if (!keys.empty())
+			keys.pop_front();
 		names.pop_front();
-
-		if (ck == 1)
-		{
-			std::string msg = owner.getNick() + "!" +  owner.getNick() + "@" + owner.getHost() + " JOIN " + chan.getName() + "\r\n";
-			_server.send_msg(msg, owner);
-		}
-		else
-		{
-			// TODO: send numeric msggit 
-			continue;
-		}
 	}
 }
 
@@ -256,12 +240,17 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 			msg += "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
 			msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost();
 			break;
+		case 332: // RPL_TOPIC
+			msg += "332 " + owner.getNick() + " " + extra + " :";
+			msg += _server.get_channel(extra).getTopic();
+			break;
 		case 353: // RPL_NAMREPLY
-			msg += "353 " + owner.getNick() + " =" + extra + " :";
+			msg += "353 " + owner.getNick() + " = " + extra + " :";
 			msg += _server.get_channel(extra).getStrUsers();
+			std::cout <<"MSG 353: " << msg << std::endl;
 			break;
 		case 366: // RPL_WELCOME
-			//TODO: 366
+			msg += "366 " + owner.getNick() + " " + extra  + " :End of /NAMES list.";
 			break;
 		case 401: // ERR_NOSUCHNICK
 			msg += "401 " + owner.getNick() + " " + extra + " :No such nick/channel";
