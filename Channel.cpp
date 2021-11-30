@@ -91,7 +91,7 @@ std::string		Channel::getStrUsers()
 	for( ; i < _users.size() ; i++)
 	{
 		//std::cout <<"USER: "<<  _users[i].first  + (_users[i].second)->getNick() << "\n";
-		s += _users[i].first  + (_users[i].second)->getNick() +" ";
+		s += ((_users[i].first) ? std::string(1,_users[i].first) : "")  + (_users[i].second)->getNick() +" ";
 	}
 	std::cout <<"USER: " << s << std::endl;
 	return s;
@@ -100,7 +100,7 @@ std::string		Channel::getStrUsers()
 std::string		Channel::getLastStrUser()
 {
 	size_t i = _users.size() - 1;
-	return (_users[i].first + (_users[i].second)->getNick());
+	return ("" + ((_users[i].first) ? std::string(1,_users[i].first) : "")  + (_users[i].second)->getNick());
 }
 
 /*
