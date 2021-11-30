@@ -182,7 +182,7 @@ bool			Server::add_channel(Channel ch)
 	return false;
 }
 
-void	Server::send_msg(std::string& msg, User& target)
+void	Server::send_msg(std::string& msg, User const & target)
 {
 	if (send(target.getSocket(), msg.c_str(), msg.length(), 0) < 0)
         perror("send");

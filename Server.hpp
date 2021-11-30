@@ -34,7 +34,7 @@ class Server
 		bool			add_channel(Channel ch);
 		Channel			&get_channel(std::string name);
 		std::vector<User> const & getUserList() const;
-		void			send_msg(std::string& msg, User& target);
+		void			send_msg(std::string& msg, User const & target);
 		void 			deleteUser(std::string nickname);
 	private:
 		std::string						_port;

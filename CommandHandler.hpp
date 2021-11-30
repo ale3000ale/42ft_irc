@@ -16,6 +16,8 @@ class CommandHandler
 		void handle(std::string cmd_line, User& owner);
 
 	private:
+		typedef std::list<std::string>::iterator _iterator;
+
 		std::string				_command;
 		std::list<std::string>	_params;
 		Server					&_server;
