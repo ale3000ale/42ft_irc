@@ -34,6 +34,7 @@ class Channel
 
 		/*----METHODS----*/
 		int				join_user(User &user, std::string key , char status);
+		void			part_user(User &user);
 		void			sendAll(std::string msg, std::string sender = "") const;
 		std::string		getStrUsers();
 		std::string		getLastStrUser();

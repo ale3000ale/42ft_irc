@@ -54,6 +54,7 @@ void Server::run()
 			throw std::runtime_error(strerror(errno));
 		for(u_int i = 0; i < this->_pfds.size(); i++)
 		{
+			std::cout<<i<<"\n";
 			// Check if someone's ready to read
 			if (this->_pfds[i].revents & POLLIN)
 			{
@@ -81,7 +82,10 @@ void Server::run()
 						curr.buffer() += buf;
 						//std::cout<<curr.buffer()<<" size:"<<curr.buffer().size()<<"\n";
 						if (curr.buffer().find("\r\n") != std::string::npos)
+						{
 							_exec_cmd(curr);
+							std::cout<<curr.buffer();
+						}
 					}
 				}
 			}
@@ -104,13 +108,12 @@ void Server::_addUser()
     else
 		inet_ntop(AF_INET6, &(((struct sockaddr_in6*)casted_addr)->sin6_addr), remoteIP, INET6_ADDRSTRLEN);
 	this->_users.push_back(User(new_fd, remoteIP));
-
 }
 
 void Server::_deleteUser(int index)
 {
 	close(this->_pfds[index].fd); // closing client's fd
-	this->_pfds.erase(this->_pfds.begin() + index); 
+	this->_pfds.erase(this->_pfds.begin() + index);
 	this->_users.erase(this->_users.begin() + index - 1);
 }
 
@@ -119,7 +122,7 @@ void Server::deleteUser(std::string nick)
 	for (u_int i = 0; i < this->_users.size(); i++)
 	{
 		if (this->_users[i].getNick() == nick)
-			return (_deleteUser(i));
+			return (_deleteUser(i + 1));
 	}
 }
 
