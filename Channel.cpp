@@ -81,7 +81,7 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 	return(475);	//ERR_BADCHANNELKEY (475)
 }
 
-void			Channel::sendAll(std::string msg, std::string sender)
+void			Channel::sendAll(std::string msg, std::string sender) const
 {
 	for (size_t i = 0; i < _users.size(); i++)
 	{

@@ -160,7 +160,7 @@ void Server::_exec_cmd(User& executor)
 	//executor.buffer().clear();
 }
 
-bool	Server::exist_channel(std::string name)
+bool	Server::exist_channel(std::string name) const
 {
 	if(_channels.find(name) != _channels.end())
 		return true;
@@ -183,7 +183,7 @@ bool			Server::add_channel(Channel ch)
 	return false;
 }
 
-void	Server::send_msg(std::string& msg, User const & target)
+void	Server::send_msg(std::string& msg, User const & target) const
 {
 	if (send(target.getSocket(), msg.c_str(), msg.length(), 0) < 0)
         perror("send");
@@ -204,7 +204,7 @@ int		Server::send_msg(std::string& msg, std::string target, User const & owner)
 	return (0);
 }
 
-int		Server::send_msg(std::string& msg, std::string target)
+int		Server::send_msg(std::string& msg, std::string target) const
 {
 	u_int i = 0;
 	
@@ -227,4 +227,14 @@ int		Server::send_msg(std::string& msg, std::string target)
 CommandHandler	Server::getHandler() const
 {
 	return (_handler);
+}
+
+void			Server::sendAllChans(std::string msg, User& sender)
+{
+	_chan_it it = this->_channels.cbegin();
+	while (it != this->_channels.cend())
+	{
+		send_msg(msg, (*it).first, sender);
+		++it;
+	}
 }

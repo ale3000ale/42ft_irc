@@ -31,15 +31,16 @@ class Server
 
 		void 			run();
 		bool 			checkPass(std::string &pass);
-		bool			exist_channel(std::string name);
+		bool			exist_channel(std::string name) const;
 		bool			add_channel(Channel ch);
 		Channel			&get_channel(std::string name);
 		std::vector<User> const & getUserList() const;
-		void			send_msg(std::string& msg, User const & target);
-		int				send_msg(std::string& msg, std::string target);
+		void			send_msg(std::string& msg, User const & target) const;
+		int				send_msg(std::string& msg, std::string target) const;
 		int				send_msg(std::string& msg, std::string target, User const & owner);
 		void 			deleteUser(std::string nickname);
 		CommandHandler	getHandler() const;
+		void			sendAllChans(std::string msg, User& sender);
 
 	private:
 		std::string						_port;
@@ -49,6 +50,8 @@ class Server
 		std::vector<User>				_users;
 		std::map<std::string, Channel>	_channels;
 		CommandHandler					_handler;
+
+		typedef std::map<std::string, Channel>::const_iterator	_chan_it;
 
 		void						_addUser();
 		void 						_deleteUser(int index);
