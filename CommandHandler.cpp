@@ -214,15 +214,15 @@ void CommandHandler::_handleJOIN(User& owner)
 		std::cout << "EXIST?: "<< std::endl;
 		if (!_server.exist_channel(names.front()))
 		{
-			std::cout << "CREATE?: "<< std::endl;
+			std::cout << "CREATED"<< std::endl;
 			Channel ch(names.front(), keys.front(), _server);
 			_server.add_channel(ch);
-			std::cout << "ADDED?: "<< std::endl;
+			std::cout << "ADDED"<< std::endl;
 			stat = '@';
 		}
 
-		std::cout << "JOINING"<< std::endl;
 		Channel &chan = _server.get_channel(names.front());
+		std::cout << "JOINING "<< chan.getName() << " key " << chan.getKey() << std::endl;
 		//if (keys.empty())
 		chan.join_user(owner, keys.front(), stat);
 		if (!keys.empty())
@@ -272,9 +272,8 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 		case 353: // RPL_NAMREPLY
 			msg += "353 " + owner.getNick() + " = " + extra + " :";
 			msg += _server.get_channel(extra).getStrUsers();
-			std::cout <<"MSG 353: " << msg << std::endl;
 			break;
-		case 366: // RPL_WELCOME
+		case 366: // RPL_ENDOFNAMES
 			msg += "366 " + owner.getNick() + " " + extra  + " :End of /NAMES list.";
 			break;
 		case 401: // ERR_NOSUCHNICK
@@ -309,6 +308,9 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 			break;
 		case 464: // ERR_PASSWDMISMATCH
 			msg += "464 " + owner.getHost() + " :Password incorrect";
+			break;
+		case 475: // ERR_BADCHANNELKEY
+			msg += "475 " + owner.getNick() + " " + extra + " :Cannot join channel (+k)";
 			break;
 		default:
 			break;

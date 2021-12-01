@@ -23,7 +23,7 @@ Channel::Channel(std::string name, std::string key, Server &server):
 Channel::Channel(Channel const & ch): 
 	_name(ch._name), _key(ch._key), _topic(ch._topic), _server(ch._server), _users(ch._users)
 {
-
+	
 }
 
 
@@ -68,16 +68,20 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 		std::cout << "User: " + user.getNick() + ":" + user.getUsername() + " is already in the channel!\n";
 		return (0);
 	}
+	std::cout << "PASS: " + _key + "\n";
 	if (key == _key)
 	{
 		_users.push_back(std::pair<char,User *>(status, &user));
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + "\r\n";
 		this->sendAll(msg);
-		//_server->getHendler()._numeric_reply(332, user, _name); ONLY TO DO IF TOPIC IS SET
+		if (!_topic.empty())
+			_server->getHandler()._numeric_reply(332, user, _name);
 		_server->getHandler()._numeric_reply(353, user, _name);
 		_server->getHandler()._numeric_reply(366, user, _name);
 		return (1);
 	}
+	else
+		_server->getHandler()._numeric_reply(475, user, _name);
 	return(475);	//ERR_BADCHANNELKEY (475)
 }
 
