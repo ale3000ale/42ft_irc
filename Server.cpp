@@ -189,7 +189,42 @@ void	Server::send_msg(std::string& msg, User const & target)
         perror("send");
 }
 
-CommandHandler	Server::getHendler() const
+int		Server::send_msg(std::string& msg, std::string target, User const & owner)
+{
+	if (exist_channel(target))
+	{
+		Channel& tmp_chan = get_channel(target);
+		if (!tmp_chan.isInChannel(owner))
+			return (404);
+		else
+			tmp_chan.sendAll(msg, owner.getNick());
+	}
+	else
+		return (401);
+	return (0);
+}
+
+int		Server::send_msg(std::string& msg, std::string target)
+{
+	u_int i = 0;
+	
+	while (i < _users.size())
+	{
+		if (_users[i].getNick() == target)
+		{
+			if (_users[i].isAway())
+				return (301);
+			send_msg(msg, _users[i]);
+			break ;
+		}
+		i++;
+	}
+	if (i == _users.size())
+		return (401);
+	return 0;
+}
+
+CommandHandler	Server::getHandler() const
 {
 	return (_handler);
 }

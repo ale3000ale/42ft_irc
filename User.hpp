@@ -29,6 +29,8 @@ class User
 		bool				isAway() const;
 		void				setAway(bool away, std::string msg = "");
 		std::string const & getAwayMsg() const;
+
+		bool				operator==(User const & other) const;
 	private:
 		int			_socket_fd;
 		std::string _host;

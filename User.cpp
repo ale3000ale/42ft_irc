@@ -49,3 +49,6 @@ void				User::setAway(bool away, std::string msg)
 
 std::string const & User::getAwayMsg() const
 { return (this->_away_msg); }
+
+bool				User::operator==(User const & other) const
+{ return (this->_nickname == other._nickname); }

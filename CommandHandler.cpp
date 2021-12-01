@@ -127,9 +127,6 @@ void CommandHandler::_handlePING(User& owner)
 	this->_server.send_msg(msg, owner);
 }
 
-/*
-	JUST HANDLING USER TO USER MSGS
-*/
 void CommandHandler::_handlePRIVMSG(User& owner) 
 {
 	if (!this->_params.size())
@@ -142,31 +139,48 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 	std::string text = " :" + *it;
 	for (++it; it != this->_params.cend(); ++it)
 		text += " "+*it;
-	std::vector<User> const & users = this->_server.getUserList();
+	//std::vector<User> const & users = this->_server.getUserList();
 	std::string head = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " PRIVMSG ";
 	while (!targets.empty())
 	{
+		// TODO refactor codice, aggiungere a server un send_msg che riceve nickname e un send_msg che riceve channel name
 		int pos = targets.find(",");
-		std::string curr_nick = targets.substr(0, pos);
-		if (curr_nick[0] == '#')
+		std::string curr_target = targets.substr(0, pos);
+		std::string msg = head + curr_target + text + "\r\n";
+		int rv;
+		if (curr_target[0] == '#')
 		{
-			// HANDLE USER TO CHANNEL MSGS
-		}
-		u_int i = 0;
-		while (i < users.size())
-		{
-			if (users[i].getNick() == curr_nick)
+			rv = this->_server.send_msg(msg, curr_target, owner);
+			/*if (this->_server.exist_channel(curr_target))
 			{
-				if (users[i].isAway())
-					_numeric_reply(301, owner, curr_nick);
-				std::string msg = head + curr_nick + text + "\r\n";
-				this->_server.send_msg(msg, users[i]);
-				break ;
+				Channel& tmp_chan = this->_server.get_channel(curr_target);
+				if (!tmp_chan.isInChannel(owner))
+					_numeric_reply(404, owner, curr_target); // TODO
+				else
+					tmp_chan.sendAll(msg, owner.getNick());
 			}
-			i++;
+			else
+				i = users.size();*/
 		}
-		if (i == users.size())
-			_numeric_reply(401, owner, curr_nick);
+		else
+		{
+			rv = this->_server.send_msg(msg, curr_target, owner);
+			/*while (i < users.size())
+			{
+				if (users[i].getNick() == curr_target)
+				{
+					if (users[i].isAway())
+						_numeric_reply(301, owner, curr_target);
+					this->_server.send_msg(msg, users[i]);
+					break ;
+				}
+				i++;
+			}*/
+		}
+		if (rv)
+			_numeric_reply(rv, owner, curr_target);
+		/*if (i == users.size())
+			_numeric_reply(401, owner, curr_target);*/
 		targets.erase(0, (pos != -1) ? pos + 1 : pos);
 	}
 }
@@ -185,6 +199,10 @@ void CommandHandler::_handleAWAY(User& owner)
 	}
 }
 
+/*
+ TODO: controllare se l'utente é gia dentro, se si ignora il comando
+		non funziona con piú di un canale
+*/
 void CommandHandler::_handleJOIN(User& owner)
 {
 	
@@ -291,6 +309,9 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 			break;
 		case 401: // ERR_NOSUCHNICK
 			msg += "401 " + owner.getNick() + " " + extra + " :No such nick/channel";
+			break;
+		case 404: // ERR_CANNOTSENDTOCHAN
+			msg += "404 " + owner.getNick() + " " + extra + " :Cannot send to channel";
 			break;
 		case 411: // ERR_NORECIPIENT
 			msg += "411 " + owner.getNick() + " :No recipient given (" + extra + ")";

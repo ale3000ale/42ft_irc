@@ -69,17 +69,18 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + "\r\n";
 		this->sendAll(msg);
 		//_server->getHendler()._numeric_reply(332, user, _name); ONLY TO DO IF TOPIC IS SET
-		_server->getHendler()._numeric_reply(353, user, _name);
-		_server->getHendler()._numeric_reply(366, user, _name);
+		_server->getHandler()._numeric_reply(353, user, _name);
+		_server->getHandler()._numeric_reply(366, user, _name);
 		return (1);
 	}
 	return(475);	//ERR_BADCHANNELKEY (475)
 }
 
-void			Channel::sendAll(std::string msg)
+void			Channel::sendAll(std::string msg, std::string sender)
 {
 	for (size_t i = 0; i < _users.size(); i++)
 	{
+		if (sender == "" || sender != _users[i].second->getNick())
 		_server->send_msg(msg, *_users[i].second);
 	}
 }
@@ -87,8 +88,7 @@ void			Channel::sendAll(std::string msg)
 std::string		Channel::getStrUsers()
 {
 	std::string s = "";
-	size_t i= 0;
-	for( ; i < _users.size() ; i++)
+	for(size_t i= 0;i < _users.size() ; i++)
 	{
 		//std::cout <<"USER: "<<  _users[i].first  + (_users[i].second)->getNick() << "\n";
 		s += ((_users[i].first) ? std::string(1,_users[i].first) : "")  + (_users[i].second)->getNick() +" ";
@@ -101,6 +101,16 @@ std::string		Channel::getLastStrUser()
 {
 	size_t i = _users.size() - 1;
 	return ("" + ((_users[i].first) ? std::string(1,_users[i].first) : "")  + (_users[i].second)->getNick());
+}
+
+bool			Channel::isInChannel(User const & user) const
+{
+	for (u_int i=0; i < this->_users.size(); i++)
+	{
+		if (*(_users[i].second) == user)
+			return true;
+	}
+	return false;
 }
 
 /*

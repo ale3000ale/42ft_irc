@@ -32,9 +32,11 @@ class Channel
 
 		/*----METHODS----*/
 		int				join_user(User &user, std::string key , char status);
-		void			sendAll(std::string msg);
+		void			sendAll(std::string msg, std::string sender = "");
 		std::string		getStrUsers();
 		std::string		getLastStrUser();
+		bool			isInChannel(User const & user) const;
+
 
 
 		/*----GETTER----*/

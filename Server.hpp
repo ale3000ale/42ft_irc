@@ -36,12 +36,14 @@ class Server
 		Channel			&get_channel(std::string name);
 		std::vector<User> const & getUserList() const;
 		void			send_msg(std::string& msg, User const & target);
+		int				send_msg(std::string& msg, std::string target);
+		int				send_msg(std::string& msg, std::string target, User const & owner);
 		void 			deleteUser(std::string nickname);
-		CommandHandler	getHendler() const;
+		CommandHandler	getHandler() const;
 
 	private:
 		std::string						_port;
-		std::string						_password; // dont know if  needed
+		std::string						_password;
 		int								_socket_fd;
 		std::vector<struct pollfd>		_pfds;
 		std::vector<User>				_users;
