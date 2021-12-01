@@ -31,9 +31,9 @@ class CommandHandler
 		void					_handlePRIVMSG(User &owner);
 		void					_handleAWAY(User &owner);
 		void					_handleQUIT(User &owner);
-
+		void 					_handleWHO(User& owner) const;
 	public:
-		void					_numeric_reply(int val, User& owner, std::string extra = "");
+		void					_numeric_reply(int val, User& owner, std::string extra = "") const;
 };
 
 #endif

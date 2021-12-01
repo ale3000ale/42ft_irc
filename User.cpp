@@ -14,6 +14,30 @@ bool		User::is_registered() const { return(this->_registered); };
 void		User::set_passed() { this->_pass_set= true; }
 void		User::set_registered() { this->_registered = true; }
 
+void		User::addChannel(std::string name)
+{
+	if (std::find(_channels.begin(),_channels.end(), name) == _channels.end())
+		_channels.push_back(name);
+}
+void		User::removeChannl(std::string name)
+{
+	_channels.erase(std::find(_channels.begin(),_channels.end(), name));
+}
+
+bool				User::commonChannel(const std::vector<std::string> &channels) const
+{
+	std::vector<std::string>::const_iterator i = channels.begin();
+	for (;i != channels.end() ;i++)
+		if (std::find(_channels.begin(),_channels.end(), *i) != _channels.end())
+			return (true);
+	return (false);
+}
+
+std::vector<std::string> const	&User::getChannels() const
+{
+	return (_channels);
+}
+
 std::string const &	User::getHost() const
 { return (this->_host); }
 

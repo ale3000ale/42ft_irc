@@ -71,6 +71,7 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 	std::cout << "PASS: " + _key + "\n";
 	if (key == _key)
 	{
+		user.addChannel(_name);
 		_users.push_back(std::pair<char,User *>(status, &user));
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + "\r\n";
 		this->sendAll(msg);
@@ -152,7 +153,10 @@ bool			Channel::isInChannel(User const & user) const
 		_users[i].first = status;
 	}
 
-
+std::vector<std::pair<char,User *> > const	&Channel::getUserList() const
+{
+	return (_users);
+}
 	
 /*
 ** --------------------------------- EXCEPTION --------------------------------

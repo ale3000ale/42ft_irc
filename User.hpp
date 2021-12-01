@@ -3,6 +3,8 @@
 # define USER_HPP
 
 #include <string>
+#include <vector>
+#include <iostream>
 
 class User
 {
@@ -18,6 +20,8 @@ class User
 		void		set_passed();
 		void		set_registered();
 
+		void		addChannel(std::string name);
+		void		removeChannl(std::string name);
 		std::string const &	getHost() const;
 		int	getSocket() const;
 		std::string const &	getNick() const;
@@ -29,9 +33,12 @@ class User
 		bool				isAway() const;
 		void				setAway(bool away, std::string msg = "");
 		std::string const & getAwayMsg() const;
+		bool				commonChannel(const std::vector<std::string> &channels) const;
+		std::vector<std::string> const	&getChannels() const;
 
 		bool				operator==(User const & other) const;
 	private:
+		
 		int			_socket_fd;
 		std::string _host;
 		bool		_pass_set;
@@ -42,6 +49,7 @@ class User
 		std::string _buffer;
 		bool		_away;
 		std::string	_away_msg;
+		std::vector<std::string> _channels;
 };
 
 

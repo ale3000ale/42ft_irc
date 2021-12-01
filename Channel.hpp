@@ -13,6 +13,8 @@ class Server;
 
 class Channel
 {
+	public:
+		typedef  std::vector<std::pair<char,User *> > user_list_type;
 	private:
 		std::string 	_name;
 		std::string		_key;
@@ -35,6 +37,7 @@ class Channel
 		void			sendAll(std::string msg, std::string sender = "") const;
 		std::string		getStrUsers();
 		std::string		getLastStrUser();
+		std::vector<std::pair<char,User *> > const	&getUserList() const;
 		bool			isInChannel(User const & user) const;
 
 

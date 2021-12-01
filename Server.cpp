@@ -238,3 +238,14 @@ void			Server::sendAllChans(std::string msg, User& sender)
 		++it;
 	}
 }
+
+User const 		&Server::getUser(std::string user) const
+{
+	size_t i  = 0;
+	for (; i < _users.size(); i++)
+	{
+		if (_users[i].getUsername() == user)
+			return _users[i];
+	}
+	return _users[i];
+}

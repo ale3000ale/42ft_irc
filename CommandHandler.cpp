@@ -61,6 +61,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleAWAY(owner);
 	else if (this->_command == "QUIT")
 		_handleQUIT(owner);
+	else if (this->_command == "WHO")
+		_handleWHO(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
@@ -170,6 +172,8 @@ void CommandHandler::_handleAWAY(User& owner)
 	}
 }
 
+
+
 void CommandHandler::_handleJOIN(User& owner)
 {
 	
@@ -245,8 +249,45 @@ void CommandHandler::_handleQUIT(User& owner)
 	*/
 }
 
+void CommandHandler::_handleWHO(User& owner) const
+{
+	const std::vector<User> &us =  _server.getUserList();
+	std::string msg;
+	Channel ch;
+	if (_params.empty())
+	{
+		for(size_t i =0 ; i !=us.size(); i++)
+		{
+			if (!(us[i].commonChannel(owner.getChannels())))
+			{																		// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
+				msg = us[i].getChannels().back() + " PAOLO " + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
+				 " H :0"  ;
+				_numeric_reply(352, owner, msg);
+			}
+		}
+		_numeric_reply(315, owner,"*");
+	}
 
-void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
+	else if(_server.exist_channel( _params.front()))
+	{
+		ch = _server.get_channel(_params.front());
+		const Channel::user_list_type &users = ch.getUserList();
+		for (size_t i =0 ;i != users.size(); i++)
+		{
+			if (users[i].first)
+				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
+				" H" + users[i].first + " :0";
+			else
+				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
+				" H :0";
+		}
+		_numeric_reply(315, owner, ch.getName());
+		
+	}
+}
+
+
+void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
 {
 	std::string msg = ":myIRCServer ";
 
@@ -267,7 +308,13 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 			break;
 		case 306: // RPL_NOWAWAY
 			msg += "306 " + owner.getNick() + " :You have been marked as being away";
-
+			break;
+		case 315: // RPL_ENDOFNAMES
+			msg += "315 " + owner.getNick() + " "  + extra + " :End of /WHO list";
+			break;
+		case 352: // RPL_WHOREPLY
+			msg += "353 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
+			msg += _server.get_channel(extra).getStrUsers();
 			break;
 		case 353: // RPL_NAMREPLY
 			msg += "353 " + owner.getNick() + " = " + extra + " :";

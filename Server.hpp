@@ -26,6 +26,7 @@
 class Server
 {
 	public:
+		
 		Server(std::string port, std::string password);
 		~Server();
 
@@ -41,6 +42,8 @@ class Server
 		void 			deleteUser(std::string nickname);
 		CommandHandler	getHandler() const;
 		void			sendAllChans(std::string msg, User& sender);
+		User const 		&getUser(std::string user) const;
+		
 
 	private:
 		std::string						_port;
