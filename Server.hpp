@@ -22,7 +22,6 @@
 
 #define BACKLOG 10 // number of connections allowed on the incoming queue
 
-
 class Server
 {
 	public:

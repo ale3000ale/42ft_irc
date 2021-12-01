@@ -66,10 +66,6 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
 
-/*
-	TODO: check how servers handle wrong password, nick not set or nick already taken
-*/
-
 void CommandHandler::_handlePASS(User& owner)
 {
 	if (!this->_params.size())
@@ -100,7 +96,15 @@ void CommandHandler::_handleNICK(User& owner)
 		std::string msg = ":" + old_nick + "!" + owner.getUsername() + "@" + owner.getHost() + " NICK :" + owner.getNick() + "\r\n";
 		this->_server.send_msg(msg, owner);
 	}
-	/* 
+	if (!owner.is_registered())
+	{
+		if (!owner.getUsername().empty())
+		{
+			owner.set_registered();
+			_numeric_reply(1, owner); // RPL_WELCOME
+		}
+	}
+	/*
 	 TODO: ADD NUMERIC REPLY 2 3 4 5
 	*/
 }
@@ -119,8 +123,11 @@ void CommandHandler::_handleUSER(User& owner)
 	std::string realname = this->_params.back();
 	owner.setUsername(username);
 	owner.setRealname(realname);
-	owner.set_registered();
-	_numeric_reply(1, owner); // RPL_WELCOME
+	if (!owner.getNick().empty())
+	{
+		owner.set_registered();
+		_numeric_reply(1, owner); // RPL_WELCOME
+	}
 }
 
 void CommandHandler::_handlePING(User& owner)
