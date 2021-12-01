@@ -63,6 +63,11 @@ Channel::~Channel()
 
 int			Channel::join_user(User &user, std::string key , char status = 0)
 {
+	if (this->isInChannel(user))
+	{
+		std::cout << "User: " + user.getNick() + ":" + user.getUsername() + " is already in the channel!\n";
+		return (0);
+	}
 	if (key == _key)
 	{
 		_users.push_back(std::pair<char,User *>(status, &user));
@@ -81,7 +86,7 @@ void			Channel::sendAll(std::string msg, std::string sender)
 	for (size_t i = 0; i < _users.size(); i++)
 	{
 		if (sender == "" || sender != _users[i].second->getNick())
-		_server->send_msg(msg, *_users[i].second);
+			_server->send_msg(msg, *(_users[i].second));
 	}
 }
 
@@ -90,8 +95,10 @@ std::string		Channel::getStrUsers()
 	std::string s = "";
 	for(size_t i= 0;i < _users.size() ; i++)
 	{
-		//std::cout <<"USER: "<<  _users[i].first  + (_users[i].second)->getNick() << "\n";
-		s += ((_users[i].first) ? std::string(1,_users[i].first) : "")  + (_users[i].second)->getNick() +" ";
+		if (_users[i].first)
+			s += (_users[i].first) + (_users[i].second)->getNick() +" ";
+		else
+			s += (_users[i].second)->getNick() +" ";
 	}
 	std::cout <<"USER: " << s << std::endl;
 	return s;
@@ -100,7 +107,9 @@ std::string		Channel::getStrUsers()
 std::string		Channel::getLastStrUser()
 {
 	size_t i = _users.size() - 1;
-	return ("" + ((_users[i].first) ? std::string(1,_users[i].first) : "")  + (_users[i].second)->getNick());
+	if ((_users[i].first))
+		return (_users[i].first) + (_users[i].second)->getNick();
+	return (_users[i].second)->getNick();
 }
 
 bool			Channel::isInChannel(User const & user) const
