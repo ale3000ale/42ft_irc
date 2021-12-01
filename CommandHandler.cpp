@@ -7,7 +7,6 @@ CommandHandler::CommandHandler(Server	&server): _server(server) {}
 
 void CommandHandler::_parse_cmd(std::string cmd_line)
 {
-	//cmd_line = cmd_line.substr(0, cmd_line.length() - 2); //deleting trailing \r\n
 	if (cmd_line.empty())
 		return ;
 	int pos = cmd_line.find(" ");
@@ -41,7 +40,7 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 	if (this->_command.empty())
 		return ;
 	if (!owner.is_passed() && this->_command != "PASS")
-		return ; // TODO send numeric reply
+		return ; // TODO: send numeric reply
 	else if (owner.is_passed() && !owner.is_registered() && this->_command != "NICK" && this->_command != "USER")
 		return _numeric_reply(451, owner, this->_command); // ERR_NOTREGISTERED
 	// sarebbe figo avere una mappa chiave = comando(es PASS) valore = puntatore funzione corrispondente
@@ -55,6 +54,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handlePING(owner);
 	else if (this->_command == "JOIN")
 		_handleJOIN(owner);
+	else if (this->_command == "PART")
+		_handlePART(owner);
 	else if (this->_command == "PRIVMSG")
 		_handlePRIVMSG(owner);
 	else if (this->_command == "AWAY")
@@ -64,6 +65,10 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
+
+/*
+	TODO: check how servers handle wrong password, nick not set or nick already taken
+*/
 
 void CommandHandler::_handlePASS(User& owner)
 {
@@ -96,7 +101,7 @@ void CommandHandler::_handleNICK(User& owner)
 		this->_server.send_msg(msg, owner);
 	}
 	/* 
-	 MAY ADD NUMERIC REPLY 2 3 4 5
+	 TODO: ADD NUMERIC REPLY 2 3 4 5
 	*/
 }
 
@@ -135,7 +140,7 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 		return _numeric_reply(412, owner); // ERR_NOTEXTTOSEND
 
 	std::string targets = this->_params.front();
-	_iterator it = this->_params.begin()++;
+	_iterator it = ++this->_params.begin();
 	std::string text = " :" + *it;
 	for (++it; it != this->_params.cend(); ++it)
 		text += " "+*it;
@@ -231,18 +236,55 @@ void CommandHandler::_handleJOIN(User& owner)
 	}
 }
 
+void CommandHandler::_handlePART(User& owner)
+{
+	if (!this->_params.size())
+		return (_numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
+	// TODO: codice molot simile in handlePRIVMSG, creare funzione
+	std::string targets = this->_params.front();
+	std::string reason;
+	if (this->_params.size() > 1)
+	{
+		_iterator it = ++this->_params.begin();
+		reason = " :\"" + *it;
+		for (++it; it != this->_params.cend(); ++it)
+			reason += " "+*it;
+		reason += "\"";
+	}
+	std::string head = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " PART ";
+	while (!targets.empty())
+	{
+		int pos = targets.find(",");
+		std::string curr_target = targets.substr(0, pos);
+		std::string msg = head + curr_target + reason + "\r\n";
+
+		if (!this->_server.exist_channel(curr_target))
+			_numeric_reply(403, owner, curr_target); // ERR_NOSUCHCHANNEL
+		else
+		{
+			Channel& tmp_chan = this->_server.get_channel(curr_target);
+			if (!tmp_chan.isInChannel(owner))
+				_numeric_reply(442, owner, curr_target); // ERR_NOTONCHANNEL
+			else
+			{
+				// send to owner and to other inside channel
+				this->_server.send_msg(msg, owner);
+				this->_server.send_msg(msg, curr_target, owner);
+				tmp_chan.part_user(owner);
+			}
+		}
+		targets.erase(0, (pos != -1) ? pos + 1 : pos);
+	}
+}
+
 void CommandHandler::_handleQUIT(User& owner)
 {
 	std::string reason = (_params.size() == 1) ? _params.front() : owner.getNick();
 	std::string msg = "ERROR :Closing Link: " + owner.getNick() + "[" + owner.getHost() + "] (Quit: " + reason + ")\r\n";
 	this->_server.send_msg(msg, owner);
-	
 	msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " QUIT :Quit: " + reason + "\r\n";
 	this->_server.sendAllChans(msg, owner);
 	this->_server.deleteUser(owner.getNick());
-	/*
-		ADD SENDING MESSAGE TO OTHER CLIENTS THAT SHARE CHANNEL WITH EXITING USER
-	*/
 }
 
 
@@ -267,7 +309,6 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 			break;
 		case 306: // RPL_NOWAWAY
 			msg += "306 " + owner.getNick() + " :You have been marked as being away";
-
 			break;
 		case 353: // RPL_NAMREPLY
 			msg += "353 " + owner.getNick() + " = " + extra + " :";
@@ -278,6 +319,9 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 			break;
 		case 401: // ERR_NOSUCHNICK
 			msg += "401 " + owner.getNick() + " " + extra + " :No such nick/channel";
+			break;
+		case 403: // ERR_NOSUCHCHANNEL
+			msg += "403 " + owner.getNick() + " " + extra + " :No such channel";
 			break;
 		case 404: // ERR_CANNOTSENDTOCHAN
 			msg += "404 " + owner.getNick() + " " + extra + " :Cannot send to channel";
@@ -297,10 +341,13 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra)
 		case 433: // ERR_NICKNAMEINUSE 
 			msg += "433 " + owner.getNick() + " " + extra + " :Nickname is already in use"; 
 			break;
+		case 442: // ERR_NOTONCHANNEL 
+			msg += "442 " + owner.getNick() + " " + extra + " :You're not on that channel";
+			break;
 		case 451: // ERR_NOTREGISTERED
 			msg += "451 " + extra + " :You have not registered";
 			break;
-		case 461: // ERR_NEEDMOREPARAMS 
+		case 461: // ERR_NEEDMOREPARAMS
 			msg += "461 " + owner.getNick() + " " + extra + " :Not enough parameters"; 
 			break;
 		case 462: // ERR_ALREADYREGISTERED

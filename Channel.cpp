@@ -85,6 +85,19 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 	return(475);	//ERR_BADCHANNELKEY (475)
 }
 
+void	Channel::part_user(User &user)
+{
+	if (!this->isInChannel(user))
+		return ;
+	u_int i = 0;
+	for (; i<_users.size(); i++)
+	{
+		if (*(_users[i].second) == user)
+			break ;
+	}
+	this->_users.erase(this->_users.begin() + i);
+}
+
 void			Channel::sendAll(std::string msg, std::string sender) const
 {
 	for (size_t i = 0; i < _users.size(); i++)

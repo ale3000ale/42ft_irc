@@ -28,6 +28,7 @@ class CommandHandler
 		void					_handleUSER(User& owner);
 		void					_handlePING(User& owner);
 		void					_handleJOIN(User &owner);
+		void					_handlePART(User &owner);
 		void					_handlePRIVMSG(User &owner);
 		void					_handleAWAY(User &owner);
 		void					_handleQUIT(User &owner);
