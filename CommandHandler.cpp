@@ -282,6 +282,7 @@ void CommandHandler::_handlePART(User& owner)
 				this->_server.send_msg(msg, owner);
 				this->_server.send_msg(msg, curr_target, owner);
 				tmp_chan.part_user(owner);
+				owner.removeChannl(curr_target);
 			}
 		}
 		targets.erase(0, (pos != -1) ? pos + 1 : pos);
@@ -305,29 +306,35 @@ void CommandHandler::_handleWHO(User& owner) const
 	Channel ch;
 	if (_params.empty())
 	{
+		std::cout << "WHO EMPTY\n"; 
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
-			if (!(us[i].commonChannel(owner.getChannels())))
-			{																		// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
-				msg = us[i].getChannels().back() + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
-				 " H :0"  ;
+			std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
+			if (!(us[i].commonChannel(owner.getChannels())) || us[i] == owner)
+			{		
+				std::cout << "WHO EMPTY no match "<< i << std::endl; 																// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
+				msg = (us[i].getChannels().empty() ? "" : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
+				 " H :0 "  + us[i].getRealname();
 				_numeric_reply(352, owner, msg);
 			}
+			std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl; 
 		}
 		_numeric_reply(315, owner,"*");
 	}
-	else if(_server.exist_channel( _params.front()))
+	else if(_server.exist_channel(_params.front()))
 	{
 		ch = _server.get_channel(_params.front());
 		const Channel::user_list_type &users = ch.getUserList();
 		for (size_t i =0 ;i != users.size(); i++)
 		{
+			std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
 			if (users[i].first)
 				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
-				" H" + users[i].first + " :0";
+				" H" + users[i].first + " :0 " + users[i].second->getRealname();
 			else
 				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
-				" H :0";
+				" H :0 " + users[i].second->getRealname();
+			_numeric_reply(352, owner, msg);
 		}
 		_numeric_reply(315, owner, ch.getName());
 		
@@ -361,7 +368,7 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "315 " + owner.getNick() + " "  + extra + " :End of /WHO list";
 			break;
 		case 352: // RPL_WHOREPLY
-			msg += "353 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
+			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
 			msg += _server.get_channel(extra).getStrUsers();
 			break;
 		case 353: // RPL_NAMREPLY

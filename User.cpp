@@ -58,6 +58,8 @@ void				User::setUsername(std::string username)
 
 void				User::setRealname(std::string realname)
 { this->_realname = realname; }
+std::string const &	User::getRealname() const
+{ return _realname;}
 
 bool				User::isAway() const
 { return (this->_away); }

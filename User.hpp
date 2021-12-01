@@ -28,7 +28,7 @@ class User
 		void				setNick(std::string nick);
 		std::string const &	getUsername() const;
 		void				setUsername(std::string nick);
-		//std::string const &	getRealname() const;
+		std::string const &	getRealname() const;
 		void				setRealname(std::string nick);
 		bool				isAway() const;
 		void				setAway(bool away, std::string msg = "");

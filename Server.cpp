@@ -54,7 +54,7 @@ void Server::run()
 			throw std::runtime_error(strerror(errno));
 		for(u_int i = 0; i < this->_pfds.size(); i++)
 		{
-			std::cout<<i<<"\n";
+			//std::cout<<i<<"\n";
 			// Check if someone's ready to read
 			if (this->_pfds[i].revents & POLLIN)
 			{
@@ -247,7 +247,7 @@ User const 		&Server::getUser(std::string user) const
 	size_t i  = 0;
 	for (; i < _users.size(); i++)
 	{
-		if (_users[i].getUsername() == user)
+		if (_users[i].getNick() == user)
 			return _users[i];
 	}
 	return _users[i];
