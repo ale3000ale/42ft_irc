@@ -260,14 +260,13 @@ void CommandHandler::_handleWHO(User& owner) const
 		{
 			if (!(us[i].commonChannel(owner.getChannels())))
 			{																		// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
-				msg = us[i].getChannels().back() + " PAOLO " + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
+				msg = us[i].getChannels().back() + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
 				 " H :0"  ;
 				_numeric_reply(352, owner, msg);
 			}
 		}
 		_numeric_reply(315, owner,"*");
 	}
-
 	else if(_server.exist_channel( _params.front()))
 	{
 		ch = _server.get_channel(_params.front());
