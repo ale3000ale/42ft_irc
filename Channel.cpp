@@ -61,6 +61,11 @@ Channel::~Channel()
 ** --------------------------------- METHODS ----------------------------------
 */
 
+bool				Channel::empty()
+{
+	return _users.empty();
+}
+
 std::string const & Channel::getModes() const
 { return (this->modes); }
 
@@ -104,6 +109,7 @@ void	Channel::part_user(User &user)
 		if (*(_users[i].second) == user)
 			break ;
 	}
+	user.removeChannl(_name);
 	this->_users.erase(this->_users.begin() + i);
 }
 
@@ -140,12 +146,101 @@ std::string		Channel::getLastStrUser()
 
 bool			Channel::isInChannel(User const & user) const
 {
-	for (u_int i=0; i < this->_users.size(); i++)
+	return (isInChannel(user.getNick()));
+	/*for (u_int i=0; i < this->_users.size(); i++)
 	{
 		if (*(_users[i].second) == user)
 			return true;
 	}
+	return false;*/
+}
+
+bool			Channel::isInChannel(std::string const & nick) const
+{
+	for (u_int i=0; i < this->_users.size(); i++)
+	{
+		if ((_users[i].second)->getNick() == nick)
+			return true;
+	}
 	return false;
+}
+
+bool 			Channel::removeUser(std::string const & nick)
+{
+	if (!this->isInChannel(nick))
+		return false;
+	u_int i = 0;
+	for (; i<_users.size(); i++)
+	{
+		if ((*(_users[i].second)).getNick() == nick)
+			break ;
+	}
+	(*_users[i].second).removeChannl(_name);
+	this->_users.erase(this->_users.begin() + i);
+	return (true);
+}
+
+bool			Channel::removeUser(User &user)
+{
+	return (this->removeUser(user.getNick()));
+	/*if (!this->isInChannel(user))
+		return false;
+	u_int i = 0;
+	for (; i<_users.size(); i++)
+	{
+		if (*(_users[i].second) == user)
+			break ;
+	}
+	this->_users.erase(this->_users.begin() + i);
+	return (true);*/
+}
+
+bool			Channel::isOperator(User &user)
+{
+	u_int i = 0;
+	for( ; i < _users.size(); i++)
+	{
+		if (_users[i].first == '@' && user == *_users[i].second)
+			return true;
+	}
+	return false;
+}
+
+bool			Channel::isOperator(std::string &user)
+{
+	u_int i = 0;
+	for( ; i < _users.size(); i++)
+	{
+		if ( _users[i].first == '@' && user == _users[i].second->getNick())
+			return true;
+	}
+	return false;
+}
+
+void			Channel::kick(User &user, std::list<std::string> & users, std::string msg)
+{ 
+	if (!this->isInChannel(user))
+	{
+		_server->getHandler()._numeric_reply(442, user, _name);
+		return;
+	}
+	if (!isOperator(user))
+	{
+		_server->getHandler()._numeric_reply(482, user, _name);
+		return;
+	}
+	for (std::list<std::string>::iterator i = users.begin(); i != users.end(); i++)
+	{
+		if (this->isInChannel(*i))
+		{
+			msg = ":" + user.getNick() + "!" +  user.getUsername() + " KICK "+ _name+ " " + *i +" :" + msg + "\r\n";
+			sendAll(msg);
+			this->removeUser(*i);
+		}
+		else
+			_server->getHandler()._numeric_reply(441, user, *i + " " + _name);
+	}
+
 }
 
 /*

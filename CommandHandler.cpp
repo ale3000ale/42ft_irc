@@ -64,6 +64,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleQUIT(owner);
 	else if (this->_command == "WHO")
 		_handleWHO(owner);
+	else if (this->_command == "KICK")
+		_handleKICK(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
@@ -219,16 +221,6 @@ void CommandHandler::_handleJOIN(User& owner)
 			}
 		_params.pop_front();
 	}
-	std::cout << "NAMES: ";
-	for (std::list<std::string>::iterator i = names.begin(); i != names.end() ; i++)
-		std::cout << *i ;
-	std::cout	<<std::endl;
-
-	std::cout << "KEYS:  ";
-	for (std::list<std::string>::iterator i = keys.begin(); i != keys.end() ; i++)
-		std::cout << *i ;
-	std::cout	<<std::endl;
-
 
 	while(!names.empty())
 	{
@@ -288,7 +280,8 @@ void CommandHandler::_handlePART(User& owner)
 				this->_server.send_msg(msg, owner);
 				this->_server.send_msg(msg, curr_target, owner);
 				tmp_chan.part_user(owner);
-				owner.removeChannl(curr_target);
+				if (tmp_chan.empty())
+					_server.removeChannel(tmp_chan.getName());
 			}
 		}
 		targets.erase(0, (pos != -1) ? pos + 1 : pos);
@@ -312,18 +305,18 @@ void CommandHandler::_handleWHO(User& owner) const
 	Channel ch;
 	if (_params.empty())
 	{
-		std::cout << "WHO EMPTY\n"; 
+		//std::cout << "WHO EMPTY\n"; 
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
-			std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
+			//std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
 			if (!(us[i].commonChannel(owner.getChannels())) || us[i] == owner)
 			{		
-				std::cout << "WHO EMPTY no match "<< i << std::endl; 																// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
+				//std::cout << "WHO EMPTY no match "<< i << std::endl; 																// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
 				msg = (us[i].getChannels().empty() ? "" : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
 				 " H :0 "  + us[i].getRealname();
 				_numeric_reply(352, owner, msg);
 			}
-			std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl; 
+			//std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl; 
 		}
 		_numeric_reply(315, owner,"*");
 	}
@@ -333,7 +326,7 @@ void CommandHandler::_handleWHO(User& owner) const
 		const Channel::user_list_type &users = ch.getUserList();
 		for (size_t i =0 ;i != users.size(); i++)
 		{
-			std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
+			//std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
 			if (users[i].first)
 				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
 				" H" + users[i].first + " :0 " + users[i].second->getRealname();
@@ -345,6 +338,55 @@ void CommandHandler::_handleWHO(User& owner) const
 		_numeric_reply(315, owner, ch.getName());
 		
 	}
+}
+
+void	CommandHandler::_handleKICK(User &owner)
+{
+	if (_params.size() < 2)
+	{
+		_numeric_reply(461, owner, "KICK");
+		return;
+	}
+	std::list<std::string> channels;
+	std::list<std::string> users;
+	int pos;
+	
+	while( _params.front() != "")
+	{
+		pos = _params.front().find(",");
+		channels.push_back(_params.front().substr(0, pos));
+		_params.front().erase(0, (pos != -1) ? pos + 1 : pos);
+	}
+	_params.pop_front();
+
+
+	while( _params.front() != "")
+	{
+		pos = _params.front().find(",");
+		users.push_back(_params.front().substr(0, pos));
+		_params.front().erase(0, (pos != -1) ? pos + 1 : pos);
+	}
+	_params.pop_front();
+
+	while (!channels.empty())
+	{
+		if (_server.exist_channel(channels.front()))
+		{
+			Channel &chan = _server.get_channel(channels.front());
+			if (!_params.empty())
+				chan.kick(owner,users, _params.front());
+			else
+				chan.kick(owner,users);
+			if (chan.empty())
+				_server.removeChannel(chan.getName());
+			channels.pop_front();
+		}
+		else
+			_numeric_reply(403, owner, channels.front());
+		
+	}
+	
+
 }
 
 
@@ -384,7 +426,6 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			break;
 		case 352: // RPL_WHOREPLY
 			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
-			msg += _server.get_channel(extra).getStrUsers();
 			break;
 		case 353: // RPL_NAMREPLY
 			msg += "353 " + owner.getNick() + " = " + extra + " :";
@@ -417,6 +458,9 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 433: // ERR_NICKNAMEINUSE 
 			msg += "433 " + owner.getNick() + " " + extra + " :Nickname is already in use"; 
 			break;
+		case 441: // ERR_USERNOTINCHANNEL  
+			msg += "441 " + owner.getNick() + " " + extra + " :They aren't on that channel";
+			break;
 		case 442: // ERR_NOTONCHANNEL 
 			msg += "442 " + owner.getNick() + " " + extra + " :You're not on that channel";
 			break;
@@ -434,6 +478,9 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			break;
 		case 475: // ERR_BADCHANNELKEY
 			msg += "475 " + owner.getNick() + " " + extra + " :Cannot join channel (+k)";
+			break;
+		case 482: // ERR_BADCHANNELKEY
+			msg += "482 " + owner.getNick() + " " + extra + " :You're not channel operator";
 			break;
 		default:
 			break;

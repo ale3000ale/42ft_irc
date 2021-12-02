@@ -237,12 +237,27 @@ CommandHandler	Server::getHandler() const
 void			Server::sendAllChans(std::string msg, User& sender)
 {
 	_chan_it it = this->_channels.cbegin();
+	_chan_it tmp;
 	while (it != this->_channels.cend())
 	{
-		send_msg(msg, (*it).first, sender);
+		std::string ch_name = (*it).first;
+		send_msg(msg, ch_name, sender);
+		_channels[ch_name].removeUser(sender);
 		++it;
 	}
+	it = this->_channels.cbegin();
+	while (it != this->_channels.cend())
+	{
+		tmp = it;
+		tmp++;
+		std::string ch_name = (*it).first;
+		send_msg(msg, ch_name, sender);
+		if(_channels[ch_name].empty())
+			this->removeChannel(ch_name);
+		it = tmp;
+	}
 }
+
 
 User const 		&Server::getUser(std::string user) const
 {
@@ -257,3 +272,9 @@ User const 		&Server::getUser(std::string user) const
 
 std::string		Server::getDateTimeCreated() const
 { return (this->_dateTimeCreated); }
+
+
+void			Server::removeChannel(std::string name)
+{
+	_channels.erase(name);
+}

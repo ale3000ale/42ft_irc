@@ -43,6 +43,7 @@ class Server
 		void			sendAllChans(std::string msg, User& sender);
 		User const 		&getUser(std::string user) const;
 		std::string		getDateTimeCreated() const;
+		void			removeChannel(std::string name);
 		
 	private:
 		std::string						_dateTimeCreated;
