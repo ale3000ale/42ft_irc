@@ -21,6 +21,8 @@
 #include <map>
 
 #define BACKLOG 10 // number of connections allowed on the incoming queue
+#define UMODES std::string("oiws") // available user modes
+#define CMODES std::string("obtkmlvsn") // available channel modes
 
 class Server
 {

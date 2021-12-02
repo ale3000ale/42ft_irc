@@ -2,7 +2,7 @@
 #include "User.hpp"
 
 
-User::User(int fd, std::string host) : _socket_fd(fd), _host(host), _pass_set(false), _registered(false), _away(false) {}
+User::User(int fd, std::string host) : _socket_fd(fd), _host(host), _pass_set(false), _registered(false), _away(false), _modes("+") {}
 
 User::~User() {};
 
@@ -78,3 +78,20 @@ std::string const & User::getAwayMsg() const
 
 bool				User::operator==(User const & other) const
 { return (this->_nickname == other._nickname); }
+
+std::string const & User::getModes() const
+{ return (this->_modes); }
+
+void				User::addMode(char mode)
+{
+	if (this->_modes.find(mode) == std::string::npos)
+		this->_modes += mode;
+}
+
+void				User::delMode(char mode)
+{
+	int pos;
+	if ((pos = this->_modes.find(mode)) == -1)
+		return ;
+	this->_modes = this->_modes.substr(0, pos) + this->_modes.substr(pos+1);
+}
