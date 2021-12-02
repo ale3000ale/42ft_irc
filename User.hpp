@@ -35,6 +35,9 @@ class User
 		std::string const & getAwayMsg() const;
 		bool				commonChannel(const std::vector<std::string> &channels) const;
 		std::vector<std::string> const	&getChannels() const;
+		std::string const & getModes() const;
+		void				addMode(char mode);
+		void				delMode(char mode);
 
 		bool				operator==(User const & other) const;
 	private:
@@ -49,6 +52,7 @@ class User
 		std::string _buffer;
 		bool		_away;
 		std::string	_away_msg;
+		std::string	_modes;
 		std::vector<std::string> _channels;
 };
 

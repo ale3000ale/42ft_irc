@@ -64,6 +64,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleQUIT(owner);
 	else if (this->_command == "WHO")
 		_handleWHO(owner);
+	else if (this->_command == "MODE")
+		_handleMODE(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
@@ -98,20 +100,8 @@ void CommandHandler::_handleNICK(User& owner)
 		std::string msg = ":" + old_nick + "!" + owner.getUsername() + "@" + owner.getHost() + " NICK :" + owner.getNick() + "\r\n";
 		this->_server.send_msg(msg, owner);
 	}
-	if (!owner.is_registered())
-	{
-		if (!owner.getUsername().empty())
-		{
-			owner.set_registered();
-			_numeric_reply(1, owner); // RPL_WELCOME
-			_numeric_reply(2, owner); // RPL_YOURHOST
-			_numeric_reply(3, owner, this->_server.getDateTimeCreated()); // RPL_CREATED
-			_numeric_reply(4, owner); // RPL_MYINFO
-		}
-	}
-	/*
-	 TODO: ADD NUMERIC REPLY 2 3 4 5
-	*/
+	if (!owner.is_registered() && !owner.getUsername().empty())
+		_welcome_msg(owner);
 }
 
 void CommandHandler::_handleUSER(User& owner)
@@ -129,13 +119,7 @@ void CommandHandler::_handleUSER(User& owner)
 	owner.setUsername(username);
 	owner.setRealname(realname);
 	if (!owner.getNick().empty())
-	{
-		owner.set_registered();
-		_numeric_reply(1, owner); // RPL_WELCOME
-		_numeric_reply(2, owner); // RPL_YOURHOST
-		_numeric_reply(3, owner, this->_server.getDateTimeCreated()); // RPL_CREATED
-		_numeric_reply(4, owner); // RPL_MYINFO
-	}
+		_welcome_msg(owner);
 }
 
 void CommandHandler::_handlePING(User& owner)
@@ -189,8 +173,6 @@ void CommandHandler::_handleAWAY(User& owner)
 		_numeric_reply(306, owner); // RPL_NOWAWAY
 	}
 }
-
-
 
 void CommandHandler::_handleJOIN(User& owner)
 {
@@ -343,10 +325,54 @@ void CommandHandler::_handleWHO(User& owner) const
 			_numeric_reply(352, owner, msg);
 		}
 		_numeric_reply(315, owner, ch.getName());
-		
 	}
 }
 
+/*
+	ONLY HANDLING USER MODES
+*/
+void	CommandHandler::_handleMODE(User& owner) const
+{
+	if (!this->_params.size())
+		return (_numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
+	std::string target = this->_params.front();
+	std::vector<User> users = this->_server.getUserList();
+	uint i=0;
+	for (; i<users.size() && users[i].getNick() != target; i++) ;
+	if (i == users.size())
+		return (_numeric_reply(401, owner, target)); // ERR_NOSUCHNICK
+	if (owner.getNick() != target)
+		return (_numeric_reply(502, owner)); // ERR_USERSDONTMATCH
+	if (this->_params.size() == 1)
+		return (_numeric_reply(221, owner, target)); // RPL_UMODEIS
+	std::string modestring = *(++(this->_params.begin()));
+	std::string msg = " ";
+	for (i=0; i<modestring.length(); i++)
+	{
+		char mode = modestring[i];
+		if (mode == '+' || mode == '-')
+			continue;
+		if (UMODES.find(mode) == std::string::npos)
+			_numeric_reply(501, owner); // ERR_UMODEUNKNOWNFLAG
+		else if (i && modestring[i - 1] == '-')
+		{
+			owner.delMode(mode);
+			msg += "-";
+			msg += mode;
+		}
+		else
+		{
+			owner.addMode(mode);
+			msg += "+";
+			msg += mode;
+		}
+	}
+	if (msg != " ")
+	{
+		msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " MODE " + owner.getNick() + msg + "\r\n";
+		this->_server.send_msg(msg, owner);
+	}
+}
 
 void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
 {
@@ -365,7 +391,10 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "003 " + owner.getNick() + " :This server was created " + extra;
 			break;
 		case 4: // RPL_MYINFO
-			msg += "004 " + owner.getNick() + " myIRCServer IRC1.0 oiws obtkmlvsn";
+			msg += "004 " + owner.getNick() + " myIRCServer IRC1.0 " + UMODES + " " + CMODES;
+			break;
+		case 221: // RPL_UMODEIS
+			msg += "221 " + owner.getNick() + " " + owner.getModes();
 			break;
 		case 332: // RPL_TOPIC
 			msg += "332 " + owner.getNick() + " " + extra + " :";
@@ -435,10 +464,26 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 475: // ERR_BADCHANNELKEY
 			msg += "475 " + owner.getNick() + " " + extra + " :Cannot join channel (+k)";
 			break;
+		case 501: // // ERR_UMODEUNKNOWNFLAG
+			msg += "501 " + owner.getNick() + " :Unknown MODE flag";
+			break;
+		case 502: // ERR_USERSDONTMATCH
+			msg += "502 " + owner.getNick() + " :Cant change mode for other users";
+			break;
 		default:
 			break;
 	}
 	msg += "\r\n";
-	std::cout<<"MSG:" + msg;
+	//std::cout<<"MSG:" + msg;
 	this->_server.send_msg(msg, owner);
+}
+
+void	CommandHandler::_welcome_msg(User& target) const
+{
+	target.set_registered();
+	_numeric_reply(1, target); // RPL_WELCOME
+	_numeric_reply(2, target); // RPL_YOURHOST
+	_numeric_reply(3, target, this->_server.getDateTimeCreated()); // RPL_CREATED
+	_numeric_reply(4, target); // RPL_MYINFO
+	// TODO: LUSERS
 }

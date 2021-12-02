@@ -33,6 +33,9 @@ class CommandHandler
 		void					_handleAWAY(User &owner);
 		void					_handleQUIT(User &owner);
 		void 					_handleWHO(User& owner) const;
+		void 					_handleMODE(User& owner) const;
+
+		void					_welcome_msg(User& target) const;
 	public:
 		void					_numeric_reply(int val, User& owner, std::string extra = "") const;
 };
