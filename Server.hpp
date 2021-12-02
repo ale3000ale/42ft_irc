@@ -42,9 +42,10 @@ class Server
 		CommandHandler	getHandler() const;
 		void			sendAllChans(std::string msg, User& sender);
 		User const 		&getUser(std::string user) const;
+		std::string		getDateTimeCreated() const;
 		
-
 	private:
+		std::string						_dateTimeCreated;
 		std::string						_port;
 		std::string						_password;
 		int								_socket_fd;

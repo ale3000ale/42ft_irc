@@ -11,6 +11,8 @@ Server::Server(std::string port, std::string password) : _port(port), _password(
 
     struct addrinfo hints, *ai;
 
+	std::time_t result = std::time(nullptr);
+    this->_dateTimeCreated = std::asctime(std::localtime(&result));
     // Get us a socket and bind it
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -252,3 +254,6 @@ User const 		&Server::getUser(std::string user) const
 	}
 	return _users[i];
 }
+
+std::string		Server::getDateTimeCreated() const
+{ return (this->_dateTimeCreated); }

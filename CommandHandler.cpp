@@ -104,6 +104,9 @@ void CommandHandler::_handleNICK(User& owner)
 		{
 			owner.set_registered();
 			_numeric_reply(1, owner); // RPL_WELCOME
+			_numeric_reply(2, owner); // RPL_YOURHOST
+			_numeric_reply(3, owner, this->_server.getDateTimeCreated()); // RPL_CREATED
+			_numeric_reply(4, owner); // RPL_MYINFO
 		}
 	}
 	/*
@@ -129,6 +132,9 @@ void CommandHandler::_handleUSER(User& owner)
 	{
 		owner.set_registered();
 		_numeric_reply(1, owner); // RPL_WELCOME
+		_numeric_reply(2, owner); // RPL_YOURHOST
+		_numeric_reply(3, owner, this->_server.getDateTimeCreated()); // RPL_CREATED
+		_numeric_reply(4, owner); // RPL_MYINFO
 	}
 }
 
@@ -352,6 +358,15 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
 			msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost();
 			break;
+		case 2: // RPL_YOURHOST
+			msg += "002 " + owner.getNick() + " :Your host is myIRCServer, running version IRC1.0";
+			break;
+		case 3: // RPL_CREATED
+			msg += "003 " + owner.getNick() + " :This server was created " + extra;
+			break;
+		case 4: // RPL_MYINFO
+			msg += "004 " + owner.getNick() + " myIRCServer IRC1.0 oiws obtkmlvsn";
+			break;
 		case 332: // RPL_TOPIC
 			msg += "332 " + owner.getNick() + " " + extra + " :";
 			msg += _server.get_channel(extra).getTopic();
@@ -424,6 +439,6 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			break;
 	}
 	msg += "\r\n";
-	//std::cout<<msg;
+	std::cout<<"MSG:" + msg;
 	this->_server.send_msg(msg, owner);
 }

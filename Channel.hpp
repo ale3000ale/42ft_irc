@@ -21,6 +21,7 @@ class Channel
 		std::string 	_topic;
 		Server			*_server;
 		//User 			*_founder;
+		std::string		modes;
 		std::vector<std::pair<char,User *> > _users;
 
 	public:
@@ -40,8 +41,8 @@ class Channel
 		std::string		getLastStrUser();
 		std::vector<std::pair<char,User *> > const	&getUserList() const;
 		bool			isInChannel(User const & user) const;
-
-
+		std::string const & getModes() const;
+		void				addMode();
 
 		/*----GETTER----*/
 		std::string 	getName() const;

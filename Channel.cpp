@@ -61,6 +61,14 @@ Channel::~Channel()
 ** --------------------------------- METHODS ----------------------------------
 */
 
+std::string const & Channel::getModes() const
+{ return (this->modes); }
+
+void				Channel::addMode()
+{
+	//TODO:
+}
+
 int			Channel::join_user(User &user, std::string key , char status = 0)
 {
 	if (this->isInChannel(user))
