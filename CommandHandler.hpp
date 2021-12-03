@@ -35,6 +35,7 @@ class CommandHandler
 		void					_handleKICK(User &owner);
 		void 					_handleWHO(User& owner) const;
 		void 					_handleMODE(User& owner) const;
+		void					_handleTOPIC(User& owner);
 
 		void					_welcome_msg(User& target) const;
 	public:

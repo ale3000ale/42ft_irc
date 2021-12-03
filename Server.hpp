@@ -47,6 +47,7 @@ class Server
 		std::string		getDateTimeCreated() const;
 		void			removeChannel(std::string name);
 		
+		
 	private:
 		std::string						_dateTimeCreated;
 		std::string						_port;

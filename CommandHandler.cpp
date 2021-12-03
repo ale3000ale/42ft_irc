@@ -19,8 +19,11 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 		if (cmd_line[0] == ':')
 		{
 			cmd_line.erase(0, 1);
-			if (cmd_line.empty())
+			if (cmd_line.empty())	// TODO: check if this is correct
+			{
+				this->_params.push_back("");
 				break ;
+			}
 			this->_params.push_back(cmd_line);
 			cmd_line.erase(0, -1);
 		}
@@ -68,6 +71,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleKICK(owner);
 	else if (this->_command == "MODE")
 		_handleMODE(owner);
+	else if (this->_command == "TOPIC")
+		_handleTOPIC(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
@@ -416,6 +421,28 @@ void	CommandHandler::_handleMODE(User& owner) const
 	}
 }
 
+void	CommandHandler::_handleTOPIC(User& owner)
+{ //TODO: clear and clock and fixx parsing : need a empty string
+	if (_params.size() < 1)
+		_numeric_reply(461, owner, "TOPIC");
+	else if (!_server.exist_channel(_params.front()))
+		_numeric_reply(403, owner, _params.front());
+	else 
+	{
+		Channel &ch = _server.get_channel(_params.front());
+		if (_params.size() == 1)
+		{
+			ch.getTopic(owner);
+			
+			return;
+		}
+		
+		_params.pop_front();
+		std::cout<< "SIZE TOPIC: " << _params.size()  << " TOPIC -> " +  _params.front() << std::endl;
+		ch.setTopic(owner, _params.front());
+	}
+}
+
 void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
 {
 	std::string msg = ":myIRCServer ";
@@ -438,9 +465,6 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 221: // RPL_UMODEIS
 			msg += "221 " + owner.getNick() + " " + owner.getModes();
 			break;
-		case 332: // RPL_TOPIC
-			msg += "332 " + owner.getNick() + " " + extra + " :";
-			msg += _server.get_channel(extra).getTopic();
 		case 301: // RPL_AWAY
 			msg += "301 " + owner.getNick() + " " + extra + " :" + owner.getAwayMsg();
 			break;
@@ -452,6 +476,15 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			break;
 		case 315: // RPL_ENDOFNAMES
 			msg += "315 " + owner.getNick() + " "  + extra + " :End of /WHO list";
+			break;
+		case 331: // RPL_NOTOPIC
+			msg += "331 " + owner.getNick() + " " + extra + " :No topic is set";
+			break;
+		case 332: // RPL_TOPIC
+			msg += "332 " + owner.getNick() + " " + extra;
+			break;
+		case 333: // RPL_TOPICWHOTIME
+			msg += "333 " + owner.getNick() + " " + extra + "";
 			break;
 		case 352: // RPL_WHOREPLY
 			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so

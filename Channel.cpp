@@ -243,6 +243,34 @@ void			Channel::kick(User &user, std::list<std::string> & users, std::string msg
 
 }
 
+void 				Channel::getTopic(User &user) const
+{
+	if(_topic == "")
+		_server->getHandler()._numeric_reply(331, user, _name);
+	else 
+	{
+		std::time_t result = std::time(nullptr);
+		_server->getHandler()._numeric_reply(332, user, _name + " :"+ _topic);
+		_server->getHandler()._numeric_reply(333, user, _name + " " + _topicSetter + " " + std::to_string(result));
+	}
+}
+
+
+void				Channel::setTopic(User &user, std::string &topic)
+{
+	if (!this->isInChannel(user))
+		_server->getHandler()._numeric_reply(442, user, _name);
+	else if (!isOperator(user))
+		_server->getHandler()._numeric_reply(482, user, _name);
+	else 
+	{
+		_topic = topic;
+		_topicSetter = user.getNick();
+		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + " TOPIC " + _name + " :"+ _topic + "\n\r";
+		_server->send_msg(msg , user);
+	}
+}
+
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
