@@ -46,6 +46,7 @@ class Server
 		User const 		&getUser(std::string user) const;
 		std::string		getDateTimeCreated() const;
 		void			removeChannel(std::string name);
+		const std::map<std::string, Channel> &getchannelList() const;
 		
 		
 	private:

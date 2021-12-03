@@ -268,6 +268,7 @@ void				Channel::setTopic(User &user, std::string &topic)
 		_topicSetter = user.getNick();
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + " TOPIC " + _name + " :"+ _topic + "\n\r";
 		_server->send_msg(msg , user);
+		//:pino!ciao@newnet-nrebgj.business.telecomitalia.it TOPIC #ai :puzzi
 	}
 }
 

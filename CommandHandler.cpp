@@ -36,6 +36,8 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 	}
 }
 
+
+
 void CommandHandler::handle(std::string cmd_line, User& owner)
 {
 	std::cout<<"command: "<<cmd_line<<std::endl;
@@ -73,13 +75,15 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleMODE(owner);
 	else if (this->_command == "TOPIC")
 		_handleTOPIC(owner);
+	else if (this->_command == "NAMES")
+		_handleNAMES(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
 
 void CommandHandler::_handlePASS(User& owner)
 {
-	if (!this->_params.size())
+	if (!this->_params.size() || this->_params.front() == "")
 		return _numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
 	if (owner.is_registered())
 		return _numeric_reply(462, owner); //ERR_ALREADYREGISTERED
@@ -91,7 +95,7 @@ void CommandHandler::_handlePASS(User& owner)
 
 void CommandHandler::_handleNICK(User& owner)
 {
-	if (!this->_params.size())
+	if (!this->_params.size() || this->_params.front() == "")
 		return _numeric_reply(431, owner); // ERR_NONICKNAMEGIVEN
 	std::string& nick = this->_params.front();
 	std::vector<User> const & users = this->_server.getUserList();
@@ -131,7 +135,7 @@ void CommandHandler::_handleUSER(User& owner)
 
 void CommandHandler::_handlePING(User& owner)
 {
-	if (!this->_params.size())
+	if (!this->_params.size() || this->_params.front() == "")
 		return _numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
 	//std::cout<<"PONG TEST: "<<this->_params.front()<<std::endl;
 	std::string msg = ":myIRCServer PONG myIRCServer :" + this->_params.front() + "\r\n";
@@ -140,7 +144,7 @@ void CommandHandler::_handlePING(User& owner)
 
 void CommandHandler::_handlePRIVMSG(User& owner) 
 {
-	if (!this->_params.size())
+	if (!this->_params.size() || this->_params.front() == "")
 		return _numeric_reply(411, owner, this->_command); // ERR_NORECIPIENT
 	if (this->_params.size() == 1)
 		return _numeric_reply(412, owner); // ERR_NOTEXTTOSEND
@@ -234,12 +238,12 @@ void CommandHandler::_handleJOIN(User& owner)
 
 void CommandHandler::_handlePART(User& owner)
 {
-	if (!this->_params.size())
+	if (!this->_params.size() || this->_params.front() == "")
 		return (_numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
 	// TODO: codice molot simile in handlePRIVMSG, creare funzione
 	std::string targets = this->_params.front();
 	std::string reason;
-	if (this->_params.size() > 1)
+	if (this->_params.size() > 1 &&  this->_params.front() != "")
 	{
 		_iterator it = ++this->_params.begin();
 		reason = " :\"" + *it;
@@ -380,7 +384,7 @@ void	CommandHandler::_handleKICK(User &owner)
 */
 void	CommandHandler::_handleMODE(User& owner) const
 {
-	if (!this->_params.size())
+	if (!this->_params.size() || this->_params.front() == "")
 		return (_numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
 	std::string target = this->_params.front();
 	std::vector<User> users = this->_server.getUserList();
@@ -390,7 +394,7 @@ void	CommandHandler::_handleMODE(User& owner) const
 		return (_numeric_reply(401, owner, target)); // ERR_NOSUCHNICK
 	if (owner.getNick() != target)
 		return (_numeric_reply(502, owner)); // ERR_USERSDONTMATCH
-	if (this->_params.size() == 1)
+	if (this->_params.size() == 1 )
 		return (_numeric_reply(221, owner, target)); // RPL_UMODEIS
 	std::string modestring = *(++(this->_params.begin()));
 	std::string msg = " ";
@@ -423,7 +427,7 @@ void	CommandHandler::_handleMODE(User& owner) const
 
 void	CommandHandler::_handleTOPIC(User& owner)
 { //TODO: clear and clock and fixx parsing : need a empty string
-	if (_params.size() < 1)
+	if (_params.size() < 1 || this->_params.front() == "")
 		_numeric_reply(461, owner, "TOPIC");
 	else if (!_server.exist_channel(_params.front()))
 		_numeric_reply(403, owner, _params.front());
@@ -436,12 +440,35 @@ void	CommandHandler::_handleTOPIC(User& owner)
 			
 			return;
 		}
-		
 		_params.pop_front();
 		std::cout<< "SIZE TOPIC: " << _params.size()  << " TOPIC -> " +  _params.front() << std::endl;
 		ch.setTopic(owner, _params.front());
 	}
 }
+
+void	CommandHandler::_handleNAMES(User& owner)
+{
+	if (_params.size() < 1 || this->_params.front() == "")
+	{
+		for (std::map<std::string, Channel>::const_iterator i = _server.getchannelList().cbegin();
+			i != _server.getchannelList().cend() ; i++)
+		{
+			_numeric_reply(353,owner, (*i).second.getName());
+			_numeric_reply(366,owner, (*i).second.getName());
+		}
+		const std::vector<User> & users = _server.getUserList();
+		std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + " ";
+		for (size_t i = 0; i < users.size() ; i++)
+		{
+			if (!users[i].getChannels().size())
+			{
+				msg +=  users[i].getNick() + " * " ;
+			}
+		}
+		msg += "\r\n";
+		_server.send_msg( msg, owner);
+	}
+}	
 
 void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
 {
@@ -489,11 +516,11 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 352: // RPL_WHOREPLY
 			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
 			break;
-		case 353: // RPL_NAMREPLY
+		case 353: // RPL_NAMREPLY TODO: Remove  _server.get_channel(extra).getStrUsers(); and use only extra
 			msg += "353 " + owner.getNick() + " = " + extra + " :";
 			msg += _server.get_channel(extra).getStrUsers();
 			break;
-		case 366: // RPL_ENDOFNAMES
+		case 366: // RPL_ENDOFNAMES 
 			msg += "366 " + owner.getNick() + " " + extra  + " :End of /NAMES list.";
 			break;
 		case 401: // ERR_NOSUCHNICK

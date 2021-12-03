@@ -278,3 +278,8 @@ void			Server::removeChannel(std::string name)
 {
 	_channels.erase(name);
 }
+
+const std::map<std::string, Channel> &Server::getchannelList() const
+{
+	return _channels;
+}
