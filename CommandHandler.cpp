@@ -382,46 +382,81 @@ void	CommandHandler::_handleKICK(User &owner)
 /*
 	ONLY HANDLING USER MODES
 */
-void	CommandHandler::_handleMODE(User& owner) const
+void	CommandHandler::_handleMODE(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
 		return (_numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
 	std::string target = this->_params.front();
-	std::vector<User> users = this->_server.getUserList();
-	uint i=0;
-	for (; i<users.size() && users[i].getNick() != target; i++) ;
-	if (i == users.size())
-		return (_numeric_reply(401, owner, target)); // ERR_NOSUCHNICK
-	if (owner.getNick() != target)
-		return (_numeric_reply(502, owner)); // ERR_USERSDONTMATCH
-	if (this->_params.size() == 1 )
-		return (_numeric_reply(221, owner, target)); // RPL_UMODEIS
-	std::string modestring = *(++(this->_params.begin()));
-	std::string msg = " ";
-	for (i=0; i<modestring.length(); i++)
+	if (target[0] == '#') // CHANNEL MODE
 	{
-		char mode = modestring[i];
-		if (mode == '+' || mode == '-')
-			continue;
-		if (UMODES.find(mode) == std::string::npos)
-			_numeric_reply(501, owner); // ERR_UMODEUNKNOWNFLAG
-		else if (i && modestring[i - 1] == '-')
+		if (!_server.exist_channel(target))
+			return (_numeric_reply(403, owner, target)); // ERR_NOSUCHCHANNEL
+		Channel &ch = _server.get_channel(target);
+		if (this->_params.size() == 1 )
 		{
-			owner.delMode(mode);
-			msg += "-";
-			msg += mode;
+			std::cout << "NO MODES\n";
+			_numeric_reply(324, owner, target + " " + _server.get_channel(target).getModes()); // RPL_CHANNELMODEIS
+			_numeric_reply(329, owner, target + " " + _server.get_channel(target).getCreationTime()); // RPL_CHANNELMODEIS
+			return ;
+		}
+		_params.pop_front();
+		if (ch.isOperator(owner))
+		{
+			std::cout << "OPERATORE \n";
+			std::string mode = _params.front();
+			std::cout << "NEW MODE " + mode + "\n";
+			_params.pop_front();
+			for (size_t i = 1; i < mode.size(); i++)
+			{
+				std::cout << "MODE " + std::string(1,mode[i]) + " PARAMS "+ _params.front() + "\n";
+				if (ch.addMode(owner, mode[i], mode[0], _params.front()))
+					_params.pop_front();
+			}
 		}
 		else
-		{
-			owner.addMode(mode);
-			msg += "+";
-			msg += mode;
-		}
+			return (_numeric_reply(482, owner, target));
+		std::cout << "OPERATORE\n";
+		
+		
 	}
-	if (msg != " ")
+	else	// USER MODE
 	{
-		msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " MODE " + owner.getNick() + msg + "\r\n";
-		this->_server.send_msg(msg, owner);
+		std::vector<User> users = this->_server.getUserList();
+		uint i=0;
+		for (; i<users.size() && users[i].getNick() != target; i++) ;
+		if (i == users.size())
+			return (_numeric_reply(401, owner, target)); // ERR_NOSUCHNICK
+		if (owner.getNick() != target)
+			return (_numeric_reply(502, owner)); // ERR_USERSDONTMATCH
+		if (this->_params.size() == 1 )
+			return (_numeric_reply(221, owner, target)); // RPL_UMODEIS
+		std::string modestring = *(++(this->_params.begin()));
+		std::string msg = " ";
+		for (i=0; i<modestring.length(); i++)
+		{
+			char mode = modestring[i];
+			if (mode == '+' || mode == '-')
+				continue;
+			if (UMODES.find(mode) == std::string::npos)
+				_numeric_reply(501, owner); // ERR_UMODEUNKNOWNFLAG
+			else if (i && modestring[i - 1] == '-')
+			{
+				owner.delMode(mode);
+				msg += "-";
+				msg += mode;
+			}
+			else
+			{
+				owner.addMode(mode);
+				msg += "+";
+				msg += mode;
+			}
+		}
+		if (msg != " ")
+		{
+			msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " MODE " + owner.getNick() + msg + "\r\n";
+			this->_server.send_msg(msg, owner);
+		}
 	}
 }
 
@@ -446,10 +481,10 @@ void	CommandHandler::_handleTOPIC(User& owner)
 	}
 }
 
-void	CommandHandler::_handleLIST(User& owner)
+/* void	CommandHandler::_handleLIST(User& owner)
 {
 	
-}
+} */
 
 void	CommandHandler::_handleNAMES(User& owner)
 {
@@ -510,6 +545,12 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 315: // RPL_ENDOFNAMES
 			msg += "315 " + owner.getNick() + " "  + extra + " :End of /WHO list";
 			break;
+		case 324: // RPL_CHANNELMODEIS 
+			msg += "324 " + owner.getNick() + " "  + extra;
+			break;
+		case 329: // RPL_CHANNELMODEIS 
+			msg += "329 " + owner.getNick() + " "  + extra;
+			break;
 		case 331: // RPL_NOTOPIC
 			msg += "331 " + owner.getNick() + " " + extra + " :No topic is set";
 			break;
@@ -519,6 +560,18 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 333: // RPL_TOPICWHOTIME
 			msg += "333 " + owner.getNick() + " " + extra + "";
 			break;
+		case 346: // RPL_INVITELIST 
+			msg += "346 " + owner.getNick() + " " + extra;
+			break;
+		case 347: // RPL_ENDOFINVITELIST
+			msg += "347 " + owner.getNick() + " " + extra  + " :End of channel invite list.";
+			break;
+		case 348: // RPL_EXCEPTLIST 
+			msg += "348 " + owner.getNick() + " " + extra;
+			break;
+		case 349: // RPL_ENDOFEXCEPTLIST
+			msg += "349 " + owner.getNick() + " " + extra  + " :End of channel exception list.";
+			break;
 		case 352: // RPL_WHOREPLY
 			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
 			break;
@@ -526,7 +579,13 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "353 " + owner.getNick() + extra;
 			break;
 		case 366: // RPL_ENDOFNAMES 
-			msg += "366 " + owner.getNick() + " " + extra  + " :End of /NAMES list.";
+			msg += "366 " + owner.getNick() + " " + extra + " :End of /NAMES list";
+			break;
+		case 367: // RPL_BANLIST
+			msg += "367 " + owner.getNick() + " " + extra  + " :End of channel ban list.";
+			break;
+		case 368: // RPL_ENDOFBANLIST 
+			msg += "368 " + owner.getNick() + " " + extra  + " :End of /NAMES list.";
 			break;
 		case 401: // ERR_NOSUCHNICK
 			msg += "401 " + owner.getNick() + " " + extra + " :No such nick/channel";

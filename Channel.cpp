@@ -7,23 +7,28 @@
 
 Channel::Channel()
 {
-
+	_creationTime = std::time(nullptr);
 }
 
 Channel::Channel(std::string name, Server &server) : 
 	_name(name), _key(""), _topic(""), _server(&server)
 {
+	_creationTime = std::time(nullptr);
+	_topicTime = std::time(nullptr);
 }
 
 Channel::Channel(std::string name, std::string key, Server &server): 
 	_name(name), _key(key), _topic(""), _server(&server)/*, _founder(us)*/
 {
+	_creationTime = std::time(nullptr);
+	_topicTime = std::time(nullptr);
 }
 
 Channel::Channel(Channel const & ch): 
 	_name(ch._name), _key(ch._key), _topic(ch._topic), _server(ch._server), _users(ch._users)
 {
-	
+	_creationTime = ch._creationTime;
+	_topicTime = ch._topicTime;
 }
 
 
@@ -61,18 +66,165 @@ Channel::~Channel()
 ** --------------------------------- METHODS ----------------------------------
 */
 
+void				Channel::ban(User &owner, std::string nick)
+{
+	if ((_banList.find(nick) != _banList.end()))
+		return;
+	_banList.insert(nick);
+	std::cout << "NON TROVATO NELLA BAN LIST\n";
+	std::string msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+						" MODE " + _name + " +b :" + nick + "!*@*" + "\r\n";
+	this->sendAll(msg);
+}
+
+void				Channel::unBan(User &owner, std::string nick)
+{
+	if (_banList.find(nick) == _banList.end())
+		return;
+	_banList.erase(nick);
+	std::string msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+						" MODE " + _name + " -b :" + nick + "!*@*" + "\r\n";
+	this->sendAll(msg);
+}
+void				Channel::exception(User &owner, std::string nick, char type)
+{
+	std::string msg;
+	switch (type)
+	{
+	case 'I':
+			std::cout << "IIIII\n";
+			if (_excInviteList.find(nick) != _excInviteList.end())
+				return;
+			_excInviteList.insert(nick);
+			std::cout << "inserted IIIIII\n";
+			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + " +I :" + nick + "!*@*" + "\r\n";
+			this->sendAll(msg);
+		break;
+	
+	case 'e':
+			if (_excBanList.find(nick) != _excBanList.end())
+				return;
+			_excBanList.insert(nick);
+			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + " +e :" + nick + "!*@*" + "\r\n";
+			this->sendAll(msg);
+		break;
+	}
+}
+
+void				Channel::unException(User &owner, std::string nick, char type)
+{
+	std::string msg;
+	switch (type)
+	{
+	case 'I':
+			if (_excInviteList.find(nick) == _excInviteList.end())
+				return;
+			_excInviteList.erase(nick);
+			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + " -I :" + nick + "!*@*" + "\r\n";
+			this->sendAll(msg);
+		break;
+	
+	case 'e':
+			if (_excBanList.find(nick) == _excBanList.end())
+				return;
+			_excBanList.erase(nick);
+			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + " -e :" + nick + "!*@*" + "\r\n";
+			this->sendAll(msg);
+		break;
+	}
+}
+
 bool				Channel::empty()
 {
 	return _users.empty();
 }
 
-std::string const & Channel::getModes() const
-{ return (this->modes); }
-
-void				Channel::addMode()
+//TODO: other MODE
+bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 {
-	//TODO:
+	std::cout << "MODE " +std::string(1, mode)+ std::string(1, m) + " PARAMS "+ param + "\n";
+	switch (m)
+	{
+		case 'b':
+			std::cout << "BAN\n";
+			if (param == "")
+			{
+				sendBanList(owner);
+				return false;
+			}
+			else if (mode == '+')
+				ban(owner, param);
+			else
+				unBan(owner, param);
+			return true;
+
+		case 'e':
+			std::cout << "EXE_BAN\n";
+			if (param == "")
+			{
+				sendExeBanList(owner);
+				return false;
+			}
+			if (mode == '+')
+				exception(owner, param, m);
+			else
+				unException(owner, param, m);
+			return true;
+
+		case 'I':
+			std::cout << "EXE_INV\n";
+			if (param == "")
+			{
+				sendExeInviteList(owner);
+				return false;
+			}
+			if (mode == '+')
+				exception(owner, param, m);
+			else
+				unException(owner, param, m);
+			return true;
+
+	}
+	return true;
 }
+
+void				Channel::sendBanList(User &owner) 		const
+{
+	std::string msg;
+	for (iter_excIB_list i = _banList.begin(); i != _banList.end();i++)
+	{
+		std::string msg = _name + " " + *i;
+		_server->getHandler()._numeric_reply(367, owner, msg);
+	}
+	_server->getHandler()._numeric_reply(368, owner, _name);
+
+}
+void				Channel::sendExeInviteList(User &owner)	const
+{
+	std::string msg;
+	for (iter_excIB_list i = _excInviteList.begin(); i != _excInviteList.end();i++)
+	{
+		std::string msg = _name + " " + *i;
+		_server->getHandler()._numeric_reply(346, owner, msg);
+	}
+	_server->getHandler()._numeric_reply(347, owner, _name);
+}
+
+void				Channel::sendExeBanList(User &owner)	const
+{
+	std::string msg;
+	for (iter_excIB_list i = _excBanList.begin(); i != _excBanList.end();i++)
+	{
+		std::string msg = _name + " " + *i;
+		_server->getHandler()._numeric_reply(348, owner, msg);
+	}
+	_server->getHandler()._numeric_reply(349, owner, _name);
+}
+
 
 int			Channel::join_user(User &user, std::string key , char status = 0)
 {
@@ -249,9 +401,8 @@ void 				Channel::getTopic(User &user) const
 		_server->getHandler()._numeric_reply(331, user, _name);
 	else 
 	{
-		std::time_t result = std::time(nullptr);
 		_server->getHandler()._numeric_reply(332, user, _name + " :"+ _topic);
-		_server->getHandler()._numeric_reply(333, user, _name + " " + _topicSetter + " " + std::to_string(result));
+		_server->getHandler()._numeric_reply(333, user, _name + " " + _topicSetter + " " + getTopicTime());
 	}
 }
 
@@ -266,15 +417,18 @@ void				Channel::setTopic(User &user, std::string &topic)
 	{
 		_topic = topic;
 		_topicSetter = user.getNick();
+		_topicTime = std::time(nullptr);
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + " TOPIC " + _name + " :"+ _topic + "\n\r";
 		_server->send_msg(msg , user);
-		//:pino!ciao@newnet-nrebgj.business.telecomitalia.it TOPIC #ai :puzzi
 	}
 }
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
+	std::string const & Channel::getModes() const
+	{ return (this->modes); }
+
 	std::string 	Channel::getName() const
 	{return _name;}
 
@@ -285,6 +439,16 @@ void				Channel::setTopic(User &user, std::string &topic)
 	std::string 	Channel::getTopic() const
 	{
 		return(_topic);
+	}
+
+	std::string 	Channel::getCreationTime() const
+	{
+		return(std::to_string(_creationTime));
+	}
+
+	std::string 	Channel::getTopicTime() const
+	{
+		return(std::to_string(_topicTime));
 	}
 
 	void 			Channel::setStatus( std::string nick, char status = 0)
@@ -302,7 +466,19 @@ std::vector<std::pair<char,User *> > const	&Channel::getUserList() const
 {
 	return (_users);
 }
-	
+
+Channel::ban_list_type const			&Channel::getBanList() const
+{
+	return (_banList);
+}
+Channel::excIB_list_type const		&Channel::getExeInviteList() const
+{
+	return (_excInviteList);
+}
+Channel::excIB_list_type const		&Channel::getExeBanList() const
+{
+	return (_excBanList);
+}
 /*
 ** --------------------------------- EXCEPTION --------------------------------
 */
