@@ -90,7 +90,7 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 		this->sendAll(msg);
 		if (!_topic.empty())
 			_server->getHandler()._numeric_reply(332, user, _name);
-		_server->getHandler()._numeric_reply(353, user, _name);
+		_server->getHandler()._numeric_reply(353, user, _name + " :"+ this->getStrUsers());
 		_server->getHandler()._numeric_reply(366, user, _name);
 		return (1);
 	}
@@ -122,7 +122,7 @@ void			Channel::sendAll(std::string msg, std::string sender) const
 	}
 }
 
-std::string		Channel::getStrUsers()
+std::string		Channel::getStrUsers() const
 {
 	std::string s = "";
 	for(size_t i= 0;i < _users.size() ; i++)

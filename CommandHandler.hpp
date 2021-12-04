@@ -37,6 +37,7 @@ class CommandHandler
 		void 					_handleMODE(User& owner) const;
 		void					_handleTOPIC(User& owner);
 		void					_handleNAMES(User& owner);
+		void					_handleLIST(User& owner);
 		
 
 		void					_welcome_msg(User& target) const;

@@ -426,7 +426,7 @@ void	CommandHandler::_handleMODE(User& owner) const
 }
 
 void	CommandHandler::_handleTOPIC(User& owner)
-{ //TODO: clear and clock and fixx parsing : need a empty string
+{
 	if (_params.size() < 1 || this->_params.front() == "")
 		_numeric_reply(461, owner, "TOPIC");
 	else if (!_server.exist_channel(_params.front()))
@@ -446,6 +446,11 @@ void	CommandHandler::_handleTOPIC(User& owner)
 	}
 }
 
+void	CommandHandler::_handleLIST(User& owner)
+{
+	
+}
+
 void	CommandHandler::_handleNAMES(User& owner)
 {
 	if (_params.size() < 1 || this->_params.front() == "")
@@ -453,7 +458,8 @@ void	CommandHandler::_handleNAMES(User& owner)
 		for (std::map<std::string, Channel>::const_iterator i = _server.getchannelList().cbegin();
 			i != _server.getchannelList().cend() ; i++)
 		{
-			_numeric_reply(353,owner, (*i).second.getName());
+			std::string msg = "" + (*i).second.getName() + " :"+  (*i).second.getStrUsers() ;
+			_numeric_reply(353,owner, msg);
 			_numeric_reply(366,owner, (*i).second.getName());
 		}
 		const std::vector<User> & users = _server.getUserList();
@@ -517,8 +523,7 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
 			break;
 		case 353: // RPL_NAMREPLY TODO: Remove  _server.get_channel(extra).getStrUsers(); and use only extra
-			msg += "353 " + owner.getNick() + " = " + extra + " :";
-			msg += _server.get_channel(extra).getStrUsers();
+			msg += "353 " + owner.getNick() + extra;
 			break;
 		case 366: // RPL_ENDOFNAMES 
 			msg += "366 " + owner.getNick() + " " + extra  + " :End of /NAMES list.";

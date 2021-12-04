@@ -41,7 +41,7 @@ class Channel
 		bool 				removeUser(std::string const & nick);
 		void				part_user(User &user);
 		void				sendAll(std::string msg, std::string sender = "") const;
-		std::string			getStrUsers();
+		std::string			getStrUsers() const;
 		std::string			getLastStrUser();
 		std::vector<std::pair<char,User *> > const	&getUserList() const;
 		bool				isInChannel(User const & user) const;
