@@ -32,8 +32,13 @@ class CommandHandler
 		void					_handlePRIVMSG(User &owner);
 		void					_handleAWAY(User &owner);
 		void					_handleQUIT(User &owner);
+		void					_handleKICK(User &owner);
 		void 					_handleWHO(User& owner) const;
-		void 					_handleMODE(User& owner) const;
+		void 					_handleMODE(User& owner);
+		void					_handleTOPIC(User& owner);
+		void					_handleNAMES(User& owner);
+		void					_handleLIST(User& owner);
+		
 
 		void					_welcome_msg(User& target) const;
 	public:

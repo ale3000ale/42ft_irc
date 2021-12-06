@@ -45,6 +45,9 @@ class Server
 		void			sendAllChans(std::string msg, User& sender);
 		User const 		&getUser(std::string user) const;
 		std::string		getDateTimeCreated() const;
+		void			removeChannel(std::string name);
+		const std::map<std::string, Channel> &getchannelList() const;
+		
 		
 	private:
 		std::string						_dateTimeCreated;

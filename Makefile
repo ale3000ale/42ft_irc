@@ -101,6 +101,7 @@ clean:
 fclean:		clean
 			@ rm -rf $(OBJS_DIR)
 			@ rm -rf $(OBJS_DEBUG_DIR)
+			@ rm -rf debug.dSYM
 			@ rm -f $(NAME)
 			@ echo $(BWHITE) "$(NAME) file was successfully deleted 🗂 ➡🗑" $(COLOR_OFF)
 
