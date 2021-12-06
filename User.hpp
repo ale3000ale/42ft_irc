@@ -36,6 +36,7 @@ class User
 		bool				commonChannel(const std::vector<std::string> &channels) const;
 		std::vector<std::string> const	&getChannels() const;
 		std::string const & getModes() const;
+		bool				hasMode(char mode) const;
 		void				addMode(char mode);
 		void				delMode(char mode);
 

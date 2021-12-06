@@ -82,9 +82,16 @@ bool				User::operator==(User const & other) const
 std::string const & User::getModes() const
 { return (this->_modes); }
 
-void				User::addMode(char mode)
+bool				User::hasMode(char mode) const
 {
 	if (this->_modes.find(mode) == std::string::npos)
+		return false;
+	return true;
+}
+
+void				User::addMode(char mode)
+{
+	if (!hasMode(mode))
 		this->_modes += mode;
 }
 

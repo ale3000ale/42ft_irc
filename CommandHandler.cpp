@@ -298,7 +298,7 @@ void CommandHandler::_handleWHO(User& owner) const
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
 			std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
-			if (!(us[i].commonChannel(owner.getChannels())) || us[i] == owner)
+			if (!((us[i].commonChannel(owner.getChannels())) || us[i].hasMode('i')) || us[i] == owner)
 			{		
 				std::cout << "WHO EMPTY no match "<< i << std::endl; 																// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
 				msg = (us[i].getChannels().empty() ? "" : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
@@ -312,10 +312,14 @@ void CommandHandler::_handleWHO(User& owner) const
 	else if(_server.exist_channel(_params.front()))
 	{
 		ch = _server.get_channel(_params.front());
+		bool isInChan = ch.isInChannel(owner);
 		const Channel::user_list_type &users = ch.getUserList();
 		for (size_t i =0 ;i != users.size(); i++)
 		{
-			std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
+			std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl;
+			if (!isInChan && users[i].second->hasMode('i'))
+				continue ;
+			// TODO: ci sara un modo per semplificare sto codice OOOOO
 			if (users[i].first)
 				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
 				" H" + users[i].first + " :0 " + users[i].second->getRealname();
@@ -357,14 +361,14 @@ void	CommandHandler::_handleMODE(User& owner) const
 		else if (i && modestring[i - 1] == '-')
 		{
 			owner.delMode(mode);
-			msg += "-";
-			msg += mode;
+			msg = "-" + std::string(1, mode);
+			//msg += mode;
 		}
 		else
 		{
 			owner.addMode(mode);
-			msg += "+";
-			msg += mode;
+			msg += "+" + std::string(1, mode);
+			//msg += mode;
 		}
 	}
 	if (msg != " ")
@@ -485,5 +489,5 @@ void	CommandHandler::_welcome_msg(User& target) const
 	_numeric_reply(2, target); // RPL_YOURHOST
 	_numeric_reply(3, target, this->_server.getDateTimeCreated()); // RPL_CREATED
 	_numeric_reply(4, target); // RPL_MYINFO
-	// TODO: LUSERS
+	// TODO: LUSERS & MOTD
 }
