@@ -68,6 +68,11 @@ Channel::~Channel()
 
 void				Channel::ban(User &owner, std::string nick)
 {
+	if (!this->isOperator(owner))
+	{
+		std::cout << "NOT OPERATOR\n";
+		return (_server->getHandler()._numeric_reply(482, owner, _name));
+	}
 	if ((_banList.find(nick) != _banList.end()))
 		return;
 	_banList.insert(nick);
@@ -79,6 +84,8 @@ void				Channel::ban(User &owner, std::string nick)
 
 void				Channel::unBan(User &owner, std::string nick)
 {
+	if (!this->isOperator(owner))
+		return (_server->getHandler()._numeric_reply(482, owner, _name));
 	if (_banList.find(nick) == _banList.end())
 		return;
 	_banList.erase(nick);
@@ -89,6 +96,8 @@ void				Channel::unBan(User &owner, std::string nick)
 void				Channel::exception(User &owner, std::string nick, char type)
 {
 	std::string msg;
+	if (!this->isOperator(owner))
+		return (_server->getHandler()._numeric_reply(482, owner, _name));
 	switch (type)
 	{
 	case 'I':
@@ -116,6 +125,8 @@ void				Channel::exception(User &owner, std::string nick, char type)
 void				Channel::unException(User &owner, std::string nick, char type)
 {
 	std::string msg;
+	if (!this->isOperator(owner))
+		return (_server->getHandler()._numeric_reply(482, owner, _name));
 	switch (type)
 	{
 	case 'I':
@@ -146,12 +157,17 @@ bool				Channel::empty()
 //TODO: other MODE
 bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 {
+	if (!mode)
+		mode = '+';
 	std::cout << "MODE " +std::string(1, mode)+ std::string(1, m) + " PARAMS "+ param + "\n";
+	std::string msg;
 	switch (m)
 	{
 		case 'b':
 			std::cout << "BAN\n";
-			if (param == "")
+			if (param == "" && mode == '-')
+				return false;
+			else if (param == "")
 			{
 				sendBanList(owner);
 				return false;
@@ -161,15 +177,16 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 			else
 				unBan(owner, param);
 			return true;
-
 		case 'e':
 			std::cout << "EXE_BAN\n";
-			if (param == "")
+			if (param == "" && mode == '-')
+				return false;
+			else if (param == "")
 			{
 				sendExeBanList(owner);
 				return false;
 			}
-			if (mode == '+')
+			else if (mode == '+')
 				exception(owner, param, m);
 			else
 				unException(owner, param, m);
@@ -177,16 +194,51 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 
 		case 'I':
 			std::cout << "EXE_INV\n";
-			if (param == "")
+			if (param == "" && mode == '-')
+				return false;
+			else if (param == "")
 			{
 				sendExeInviteList(owner);
 				return false;
 			}
-			if (mode == '+')
+			else if (mode == '+')
 				exception(owner, param, m);
 			else
 				unException(owner, param, m);
 			return true;
+		case 'i':
+			if (mode == '-' && modes.find('i') != std::string::npos)
+			{
+				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+									" MODE " + _name + " -i" + "\r\n";
+				this->sendAll(msg);
+			}
+			else if (modes.find('i') == std::string::npos)
+			{
+				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+									" MODE " + _name + " +i" + "\r\n";
+				this->sendAll(msg);
+			}
+			return false;
+		case 'k':
+			if (param == "")
+			{
+				
+			}
+			if (mode == '-' && modes.find('i') != std::string::npos )
+			{
+				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+									" MODE " + _name + " -i" + "\r\n";
+				this->sendAll(msg);
+			}
+			else if (modes.find('i') == std::string::npos)
+			{
+				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+									" MODE " + _name + " +i" + "\r\n";
+				this->sendAll(msg);
+			}
+			return false;
+			break;
 
 	}
 	return true;
@@ -242,7 +294,7 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 		this->sendAll(msg);
 		if (!_topic.empty())
 			_server->getHandler()._numeric_reply(332, user, _name);
-		_server->getHandler()._numeric_reply(353, user, _name + " :"+ this->getStrUsers());
+		_server->getHandler()._numeric_reply(353, user, "= "+_name + " :"+ this->getStrUsers());
 		_server->getHandler()._numeric_reply(366, user, _name);
 		return (1);
 	}

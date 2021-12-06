@@ -381,9 +381,7 @@ void	CommandHandler::_handleKICK(User &owner)
 
 }
 
-/*
-	ONLY HANDLING USER MODES
-*/
+
 void	CommandHandler::_handleMODE(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
@@ -402,21 +400,16 @@ void	CommandHandler::_handleMODE(User& owner)
 			return ;
 		}
 		_params.pop_front();
-		if (ch.isOperator(owner))
+		std::string mode = _params.front();
+		_params.pop_front();
+		char type = (mode[0] == '-' || mode[0] == '+') ? mode[0] : 0;
+		std::cout << "NEW MODE |" + mode + "| " <<  type << " TYPE != 0 "<<(type != 0)<<" \n";
+		for (size_t i = (type != 0); i < mode.size(); i++)
 		{
-			std::cout << "OPERATORE \n";
-			std::string mode = _params.front();
-			std::cout << "NEW MODE " + mode + "\n";
-			_params.pop_front();
-			for (size_t i = 1; i < mode.size(); i++)
-			{
-				std::cout << "MODE " + std::string(1,mode[i]) + " PARAMS "+ _params.front() + "\n";
-				if (ch.addMode(owner, mode[i], mode[0], _params.front()))
-					_params.pop_front();
-			}
+			std::cout << "MODE " + std::string(1,mode[i]) + " PARAMS "+ _params.front() + "\n";
+			if (ch.addMode(owner, mode[i], type, _params.front()))
+				_params.pop_front();
 		}
-		else
-			return (_numeric_reply(482, owner, target));
 		std::cout << "OPERATORE\n";
 		
 		
@@ -495,7 +488,7 @@ void	CommandHandler::_handleNAMES(User& owner)
 		for (std::map<std::string, Channel>::const_iterator i = _server.getchannelList().cbegin();
 			i != _server.getchannelList().cend() ; i++)
 		{
-			std::string msg = "" + (*i).second.getName() + " :"+  (*i).second.getStrUsers() ;
+			std::string msg = "= " + (*i).second.getName() + " :"+  (*i).second.getStrUsers() ;
 			_numeric_reply(353,owner, msg);
 			_numeric_reply(366,owner, (*i).second.getName());
 		}
@@ -578,7 +571,7 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
 			break;
 		case 353: // RPL_NAMREPLY TODO: Remove  _server.get_channel(extra).getStrUsers(); and use only extra
-			msg += "353 " + owner.getNick() + extra;
+			msg += "353 " + owner.getNick() + " " + extra;
 			break;
 		case 366: // RPL_ENDOFNAMES 
 			msg += "366 " + owner.getNick() + " " + extra + " :End of /NAMES list";
@@ -636,11 +629,15 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			break;
 		case 482: // ERR_BADCHANNELKEY
 			msg += "482 " + owner.getNick() + " " + extra + " :You're not channel operator";
+			break;
 		case 501: // // ERR_UMODEUNKNOWNFLAG
 			msg += "501 " + owner.getNick() + " :Unknown MODE flag";
 			break;
 		case 502: // ERR_USERSDONTMATCH
 			msg += "502 " + owner.getNick() + " :Cant change mode for other users";
+			break;
+		case 696: // ERR_INVALIDMODEPARAM
+			msg += "696 " + owner.getNick() + " :Cant change mode for other users";
 			break;
 		default:
 			break;
