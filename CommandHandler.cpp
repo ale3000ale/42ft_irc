@@ -299,29 +299,25 @@ void CommandHandler::_handleWHO(User& owner) const
 		//std::cout << "WHO EMPTY\n"; 
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
-			std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
-			if (!((us[i].commonChannel(owner.getChannels())) || us[i].hasMode('i')) || us[i] == owner)
+			//std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
+			if (!(us[i].commonChannel(owner.getChannels())) || us[i] == owner)
 			{		
 				//std::cout << "WHO EMPTY no match "<< i << std::endl; 																// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
-				msg = (us[i].getChannels().empty() ? "" : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
+				msg = (us[i].getChannels().empty() ? "*" : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
 				 " H :0 "  + us[i].getRealname();
 				_numeric_reply(352, owner, msg);
 			}
-			//std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl; 
+			//std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl;
 		}
 		_numeric_reply(315, owner,"*");
 	}
 	else if(_server.exist_channel(_params.front()))
 	{
 		ch = _server.get_channel(_params.front());
-		bool isInChan = ch.isInChannel(owner);
 		const Channel::user_list_type &users = ch.getUserList();
 		for (size_t i =0 ;i != users.size(); i++)
 		{
-			std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl;
-			if (!isInChan && users[i].second->hasMode('i'))
-				continue ;
-			// TODO: ci sara un modo per semplificare sto codice OOOOO
+			//std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
 			if (users[i].first)
 				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
 				" H" + users[i].first + " :0 " + users[i].second->getRealname();
@@ -639,7 +635,7 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "502 " + owner.getNick() + " :Cant change mode for other users";
 			break;
 		case 696: // ERR_INVALIDMODEPARAM
-			msg += "696 " + owner.getNick() + " :Cant change mode for other users";
+			msg += "696 " + owner.getNick() + " " + extra ;
 			break;
 		default:
 			break;
@@ -656,5 +652,5 @@ void	CommandHandler::_welcome_msg(User& target) const
 	_numeric_reply(2, target); // RPL_YOURHOST
 	_numeric_reply(3, target, this->_server.getDateTimeCreated()); // RPL_CREATED
 	_numeric_reply(4, target); // RPL_MYINFO
-	// TODO: LUSERS & MOTD
+	// TODO: LUSERS
 }

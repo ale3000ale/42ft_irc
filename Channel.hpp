@@ -32,10 +32,12 @@ class Channel
 		std::time_t		_creationTime;
 		Server			*_server;
 		//User 			*_founder;
-		std::string		modes;
+		std::string		_modes;
+		int 			_limit;
 		std::set<std::string>  _banList;
 		std::set<std::string>  _excBanList;
 		std::set<std::string>  _excInviteList;
+		std::set<std::string>  _inviteList;
 		std::vector<std::pair<char,User *> > _users;
 
 	public:
@@ -61,6 +63,7 @@ class Channel
 		bool				isOperator(User &user);
 		bool				isOperator(std::string &user);
 		bool				empty();
+		void				delMode(char mode);
 		//TODO: 
 		void				ban(User &owner, std::string nick);
 		void				exception(User &owner, std::string nick, char type);
@@ -78,6 +81,7 @@ class Channel
 
 
 		/*----GETTER----*/
+		int						getLimit() const;
 		std::string const 		&getModes() const;
 		std::string 			getName() const;
 		std::string 			getKey() const;

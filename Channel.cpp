@@ -15,6 +15,7 @@ Channel::Channel(std::string name, Server &server) :
 {
 	_creationTime = std::time(nullptr);
 	_topicTime = std::time(nullptr);
+	_limit = INT32_MAX;
 }
 
 Channel::Channel(std::string name, std::string key, Server &server): 
@@ -22,6 +23,7 @@ Channel::Channel(std::string name, std::string key, Server &server):
 {
 	_creationTime = std::time(nullptr);
 	_topicTime = std::time(nullptr);
+	_limit = INT32_MAX;
 }
 
 Channel::Channel(Channel const & ch): 
@@ -29,6 +31,7 @@ Channel::Channel(Channel const & ch):
 {
 	_creationTime = ch._creationTime;
 	_topicTime = ch._topicTime;
+	_limit = INT32_MAX;
 }
 
 
@@ -79,6 +82,8 @@ void				Channel::ban(User &owner, std::string nick)
 	std::cout << "NON TROVATO NELLA BAN LIST\n";
 	std::string msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 						" MODE " + _name + " +b :" + nick + "!*@*" + "\r\n";
+	if (this->_modes.find('b') == std::string::npos)
+		_modes += "b";
 	this->sendAll(msg);
 }
 
@@ -92,6 +97,8 @@ void				Channel::unBan(User &owner, std::string nick)
 	std::string msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 						" MODE " + _name + " -b :" + nick + "!*@*" + "\r\n";
 	this->sendAll(msg);
+	if (_banList.empty())
+		this->delMode('b');
 }
 void				Channel::exception(User &owner, std::string nick, char type)
 {
@@ -108,6 +115,8 @@ void				Channel::exception(User &owner, std::string nick, char type)
 			std::cout << "inserted IIIIII\n";
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 								" MODE " + _name + " +I :" + nick + "!*@*" + "\r\n";
+			if (this->_modes.find('I') == std::string::npos)
+				_modes += "I";
 			this->sendAll(msg);
 		break;
 	
@@ -118,6 +127,8 @@ void				Channel::exception(User &owner, std::string nick, char type)
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 								" MODE " + _name + " +e :" + nick + "!*@*" + "\r\n";
 			this->sendAll(msg);
+			if (this->_modes.find('e') == std::string::npos)
+				_modes += "e";
 		break;
 	}
 }
@@ -136,6 +147,8 @@ void				Channel::unException(User &owner, std::string nick, char type)
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 								" MODE " + _name + " -I :" + nick + "!*@*" + "\r\n";
 			this->sendAll(msg);
+			if (_excInviteList.empty())
+				this->delMode('I');
 		break;
 	
 	case 'e':
@@ -145,6 +158,8 @@ void				Channel::unException(User &owner, std::string nick, char type)
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 								" MODE " + _name + " -e :" + nick + "!*@*" + "\r\n";
 			this->sendAll(msg);
+			if (_excBanList.empty())
+				this->delMode('e');
 		break;
 	}
 }
@@ -152,6 +167,15 @@ void				Channel::unException(User &owner, std::string nick, char type)
 bool				Channel::empty()
 {
 	return _users.empty();
+}
+
+
+void				Channel::delMode(char mode)
+{
+	int pos;
+	if ((pos = this->_modes.find(mode)) == -1)
+		return ;
+	this->_modes = this->_modes.substr(0, pos) + this->_modes.substr(pos+1);
 }
 
 //TODO: other MODE
@@ -207,38 +231,80 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 				unException(owner, param, m);
 			return true;
 		case 'i':
-			if (mode == '-' && modes.find('i') != std::string::npos)
+			if (mode == '-' && _modes.find('i') != std::string::npos)
 			{
 				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 									" MODE " + _name + " -i" + "\r\n";
 				this->sendAll(msg);
+				this->delMode(m);
 			}
-			else if (modes.find('i') == std::string::npos)
+			else if (_modes.find('i') == std::string::npos)
 			{
 				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 									" MODE " + _name + " +i" + "\r\n";
 				this->sendAll(msg);
+				if (this->_modes.find('i') == std::string::npos)
+					_modes += "i";
 			}
 			return false;
 		case 'k':
-			if (param == "")
+		//:pino!ss@newnet-nrebgj.business.telecomitalia.it MODE #ai -k :aaa
+			if (param == "" )
 			{
-				
+				msg = _name + " k * :You must specify a parameter.";
+				_server->getHandler()._numeric_reply(696,owner, msg);
+				return false;
 			}
-			if (mode == '-' && modes.find('i') != std::string::npos )
+			else if (mode == '-')
 			{
-				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-									" MODE " + _name + " -i" + "\r\n";
-				this->sendAll(msg);
+				if (param == _key)
+				{
+					_key = "";
+					this->delMode(m);
+					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+									" MODE " + _name + " -k :"+ param + "\r\n";
+					this->sendAll(msg);
+				}
+				return true;
 			}
-			else if (modes.find('i') == std::string::npos)
+			else
 			{
-				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-									" MODE " + _name + " +i" + "\r\n";
-				this->sendAll(msg);
+				if (_key == "")
+				{
+					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+									" MODE " + _name + " +k :"+ param + "\r\n";
+					this->sendAll(msg);
+					if (this->_modes.find('k') == std::string::npos)
+						_modes += "k";
+				}
+				return true;
 			}
-			return false;
 			break;
+		case 'l':
+			if (mode == '+' && param != "")
+			{
+				int limit = std::atoi(param.c_str());
+				if (limit)
+				{
+					_limit = limit;
+					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + " +l :" + std::to_string(_limit) + "\r\n";
+					this->sendAll(msg);
+					if (this->_modes.find('l') == std::string::npos)
+						_modes += "l";
+				}
+				return (true);
+			}
+			else if (mode == '-' && this->_modes.find('l') == std::string::npos)
+			{
+				this->delMode(m);
+				_limit = INT32_MAX;
+				msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + ": -l\r\n";
+				this->sendAll(msg);
+			}
+			return false;			
+		break;
 
 	}
 	return true;
@@ -478,8 +544,14 @@ void				Channel::setTopic(User &user, std::string &topic)
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
+
+	int					Channel::getLimit() const
+	{
+		return (_limit);
+	}
+
 	std::string const & Channel::getModes() const
-	{ return (this->modes); }
+	{ return (this->_modes); }
 
 	std::string 	Channel::getName() const
 	{return _name;}
