@@ -297,11 +297,11 @@ void CommandHandler::_handleWHO(User& owner) const
 		//std::cout << "WHO EMPTY\n"; 
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
-			std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; 
+			/*std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; */
 			if (!((us[i].commonChannel(owner.getChannels())) || us[i].hasMode('i')) || us[i] == owner)
 			{		
-				//std::cout << "WHO EMPTY no match "<< i << std::endl; 																// TODO: server.host server.name  					wtf is H/G <hopcount> <real name>
-				msg = (us[i].getChannels().empty() ? "" : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
+				//std::cout << "WHO EMPTY no match "<< i << std::endl;														// TODO: server.host server.name  					wtf is H/G
+				msg = (us[i].getChannels().empty() ? "* " : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
 				 " H :0 "  + us[i].getRealname();
 				_numeric_reply(352, owner, msg);
 			}

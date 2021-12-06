@@ -82,6 +82,10 @@ int main(int ac, char *av[])
 	msg = "JOIN #insultaBOT\r\n";
 	send(sockfd, msg.c_str(), msg.length(), 0);
 	while (1)
-	{}
-	std::cout<<buf;
+	{
+		memset(buf, 0, sizeof(buf));
+		int nbytes = recv(sockfd, buf, sizeof(buf), 0);
+		//if (nbytes == 0)
+			// TODO: server closed connection, try to reconnect
+	}
 }
