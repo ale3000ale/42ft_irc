@@ -36,8 +36,6 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 	}
 }
 
-
-
 void CommandHandler::handle(std::string cmd_line, User& owner)
 {
 	std::cout<<"command: "<<cmd_line<<std::endl;
