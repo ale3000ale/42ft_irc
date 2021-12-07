@@ -6,6 +6,7 @@
 int main(int ac, char *av[])
 {
 	Server *server;
+	// TODO: sistemare argomenti accettabili
 	if (ac != 3)
 	{
 		std::cerr<<"usage: "<<av[0]<<" port password"<<std::endl;

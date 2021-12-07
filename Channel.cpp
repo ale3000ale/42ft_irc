@@ -343,7 +343,6 @@ void				Channel::sendExeBanList(User &owner)	const
 	_server->getHandler()._numeric_reply(349, owner, _name);
 }
 
-
 int			Channel::join_user(User &user, std::string key , char status = 0)
 {
 	if (this->isInChannel(user))

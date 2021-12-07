@@ -73,8 +73,7 @@ void Server::run()
 					int nbytes = recv(this->_pfds[i].fd, buf, sizeof(buf), 0);
 					if (nbytes <= 0)
 					{
-						/*if (nbytes)
-							ERROR*/
+						// TODO: if (nbytes != 0) ERROR
 						// Got error or connection closed by client
 						_deleteUser(i); // check if doing this i miss one fd
 					}
@@ -102,6 +101,7 @@ void Server::_addUser()
 	int new_fd;
 	if ((new_fd = accept(this->_socket_fd, (struct sockaddr *)&clientaddr, &addrlen)) < 0)
 		return (perror("accept"));
+	std::cout<<new_fd<<"\n";
 	_addFd(new_fd);
 	char remoteIP[INET6_ADDRSTRLEN];
 	struct sockaddr *casted_addr = (struct sockaddr*)&clientaddr;
@@ -234,6 +234,7 @@ CommandHandler	Server::getHandler() const
 	return (_handler);
 }
 
+// TODO: not working
 void			Server::sendAllChans(std::string msg, User& sender)
 {
 	_chan_it it = this->_channels.cbegin();
@@ -251,7 +252,6 @@ void			Server::sendAllChans(std::string msg, User& sender)
 		tmp = it;
 		tmp++;
 		std::string ch_name = (*it).first;
-		send_msg(msg, ch_name, sender);
 		if(_channels[ch_name].empty())
 			this->removeChannel(ch_name);
 		it = tmp;

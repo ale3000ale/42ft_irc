@@ -19,6 +19,8 @@ void		User::addChannel(std::string name)
 	if (std::find(_channels.begin(),_channels.end(), name) == _channels.end())
 		_channels.push_back(name);
 }
+
+// TODO: goes in segfault if channel operator quits
 void		User::removeChannl(std::string name)
 {
 	_channels.erase(std::find(_channels.begin(),_channels.end(), name));
