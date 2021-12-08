@@ -122,9 +122,12 @@ leaks:
 			@ leaks --atExit -- ./$(NAME)
 
 fast_git:	fclean
-		    @echo "Write the commit:";\
-			read COMMIT;\
-			git add . && git commit -m  "$$COMMIT" && git push
+			@echo "What should I push?";\
+			read PUSH;\
+			git add $$PUSH &&\
+		    echo "Write the commit:";\
+			read COMMIT && \
+			git commit -m  "$$COMMIT" && git push
 
 # git add . && git commit -m "$CM" && git push
 
