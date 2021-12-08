@@ -231,7 +231,10 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 				unException(owner, param, m);
 			return true;
 		case 'i':
-			if (mode == '-' && _modes.find('i') != std::string::npos)
+			std::cout << "INVITE\n";
+			if (!this->isOperator(owner))
+				_server->getHandler()._numeric_reply(482, owner, _name);
+			else if (mode == '-' && _modes.find('i') != std::string::npos)
 			{
 				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 									" MODE " + _name + " -i" + "\r\n";
@@ -248,7 +251,9 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 			}
 			return false;
 		case 'k':
-		//:pino!ss@newnet-nrebgj.business.telecomitalia.it MODE #ai -k :aaa
+			std::cout << "KEY\n";
+			if (!this->isOperator(owner))
+				_server->getHandler()._numeric_reply(482, owner, _name);
 			if (param == "" )
 			{
 				msg = _name + " k * :You must specify a parameter.";
@@ -281,7 +286,10 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 			}
 			break;
 		case 'l':
-			if (mode == '+' && param != "")
+			std::cout << "LIMIT\n";
+			if (!this->isOperator(owner))
+				_server->getHandler()._numeric_reply(482, owner, _name);
+			else if (mode == '+' && param != "")
 			{
 				int limit = std::atoi(param.c_str());
 				if (limit)
@@ -304,10 +312,40 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 				this->sendAll(msg);
 			}
 			return false;			
-		break;
+			break;
+		case 'o':
+			std::cout << "SET OPERATOR\n";
+			if (!this->isOperator(owner))
+				_server->getHandler()._numeric_reply(482, owner, _name);
+			else if (param == "")
+				return false;
+			else 
+			{
+				std::cout << "param not empty\n";
+				size_t i = 0;
+				for (; i< _users.size(); i++)
+					if (_users[i].second->getNick() == param)
+						break;
+				std::cout << "SIZE " <<i << "\n";
+				if (i < _users.size())
+				{
+					if (mode == '+')
+						_users[i].first = '@';
+					else
+						_users[i].first = '\0';
+					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+								" MODE " + _name + " " + mode +"o " + param +"\r\n";
+					this->sendAll(msg);
+				}
+				else
+					_server->getHandler()._numeric_reply(401, owner, param);
+				return true;
+			}
 
+			//:amarcell!kvirc@realirc-44msin.business.telecomitalia.it MODE #ai +o pino
+			break;
 	}
-	return true;
+	return false;
 }
 
 void				Channel::sendBanList(User &owner) 		const

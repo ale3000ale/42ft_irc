@@ -121,6 +121,8 @@ leaks:
 			@ echo $(LEAKS_COLOR) "[... Finding leaks in $(NAME) ⛳️ ...]" 
 			@ leaks --atExit -- ./$(NAME)
 
+fast_git:	fclean
+			git add . && git commit -m "$CM" && git push
 
 clear_space:
 			@rm -rf ~/Library/Caches
