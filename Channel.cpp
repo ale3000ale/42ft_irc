@@ -175,6 +175,7 @@ void				Channel::delMode(char mode)
 	int pos;
 	if ((pos = this->_modes.find(mode)) == -1)
 		return ;
+	std::cout << "DELMODE " +this->_modes.substr(0, pos)+ " -- "+ this->_modes.substr(pos+1) + "\n";
 	this->_modes = this->_modes.substr(0, pos) + this->_modes.substr(pos+1);
 }
 
@@ -184,169 +185,322 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 	if (!mode)
 		mode = '+';
 	std::cout << "MODE " +std::string(1, mode)+ std::string(1, m) + " PARAMS "+ param + "\n";
-	std::string msg;
 	switch (m)
 	{
 		case 'b':
-			std::cout << "BAN\n";
-			if (param == "" && mode == '-')
-				return false;
-			else if (param == "")
-			{
-				sendBanList(owner);
-				return false;
-			}
-			else if (mode == '+')
-				ban(owner, param);
-			else
-				unBan(owner, param);
-			return true;
+			return modeBAN(owner, mode, param);
 		case 'e':
-			std::cout << "EXE_BAN\n";
-			if (param == "" && mode == '-')
-				return false;
-			else if (param == "")
-			{
-				sendExeBanList(owner);
-				return false;
-			}
-			else if (mode == '+')
-				exception(owner, param, m);
-			else
-				unException(owner, param, m);
-			return true;
-
+			return modeEXCBAN(owner, mode, param);
 		case 'I':
-			std::cout << "EXE_INV\n";
-			if (param == "" && mode == '-')
-				return false;
-			else if (param == "")
-			{
-				sendExeInviteList(owner);
-				return false;
-			}
-			else if (mode == '+')
-				exception(owner, param, m);
-			else
-				unException(owner, param, m);
-			return true;
+			return modeEXCINVITE(owner, mode, param);
 		case 'i':
-			std::cout << "INVITE\n";
-			if (!this->isOperator(owner))
-				_server->getHandler()._numeric_reply(482, owner, _name);
-			else if (mode == '-' && _modes.find('i') != std::string::npos)
-			{
-				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-									" MODE " + _name + " -i" + "\r\n";
-				this->sendAll(msg);
-				this->delMode(m);
-			}
-			else if (_modes.find('i') == std::string::npos)
-			{
-				msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-									" MODE " + _name + " +i" + "\r\n";
-				this->sendAll(msg);
-				if (this->_modes.find('i') == std::string::npos)
-					_modes += "i";
-			}
-			return false;
+			return modeINVITE(owner, mode);
 		case 'k':
-			std::cout << "KEY\n";
-			if (!this->isOperator(owner))
-				_server->getHandler()._numeric_reply(482, owner, _name);
-			if (param == "" )
-			{
-				msg = _name + " k * :You must specify a parameter.";
-				_server->getHandler()._numeric_reply(696,owner, msg);
-				return false;
-			}
-			else if (mode == '-')
-			{
-				if (param == _key)
-				{
-					_key = "";
-					this->delMode(m);
-					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-									" MODE " + _name + " -k :"+ param + "\r\n";
-					this->sendAll(msg);
-				}
-				return true;
-			}
-			else
-			{
-				if (_key == "")
-				{
-					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-									" MODE " + _name + " +k :"+ param + "\r\n";
-					this->sendAll(msg);
-					if (this->_modes.find('k') == std::string::npos)
-						_modes += "k";
-				}
-				return true;
-			}
-			break;
+			return modeKEY(owner, mode, param);
 		case 'l':
-			std::cout << "LIMIT\n";
-			if (!this->isOperator(owner))
-				_server->getHandler()._numeric_reply(482, owner, _name);
-			else if (mode == '+' && param != "")
-			{
-				int limit = std::atoi(param.c_str());
-				if (limit)
-				{
-					_limit = limit;
-					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + " +l :" + std::to_string(_limit) + "\r\n";
-					this->sendAll(msg);
-					if (this->_modes.find('l') == std::string::npos)
-						_modes += "l";
-				}
-				return (true);
-			}
-			else if (mode == '-' && this->_modes.find('l') == std::string::npos)
-			{
-				this->delMode(m);
-				_limit = INT32_MAX;
-				msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + ": -l\r\n";
-				this->sendAll(msg);
-			}
-			return false;			
-			break;
+			return modeLIMIT(owner, mode, param);
 		case 'o':
-			std::cout << "SET OPERATOR\n";
-			if (!this->isOperator(owner))
-				_server->getHandler()._numeric_reply(482, owner, _name);
-			else if (param == "")
-				return false;
-			else 
-			{
-				std::cout << "param not empty\n";
-				size_t i = 0;
-				for (; i< _users.size(); i++)
-					if (_users[i].second->getNick() == param)
-						break;
-				std::cout << "SIZE " <<i << "\n";
-				if (i < _users.size())
-				{
-					if (mode == '+')
-						_users[i].first = '@';
-					else
-						_users[i].first = '\0';
-					msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + " " + mode +"o " + param +"\r\n";
-					this->sendAll(msg);
-				}
-				else
-					_server->getHandler()._numeric_reply(401, owner, param);
-				return true;
-			}
-
-			//:amarcell!kvirc@realirc-44msin.business.telecomitalia.it MODE #ai +o pino
-			break;
+			return modeOPERATOR(owner, mode, param);
+		case 'm':
+			return modeMODERATE(owner, mode);
+		case 's':
+			return modeSECRET(owner, mode);
+		case 't':
+			return modeTOPIC(owner, mode);
+		case 'n':
+			return modeNOBURINI(owner, mode);
 	}
 	return false;
 }
+
+bool				Channel::modeNOBURINI(User &owner, char mode)
+{
+	std::string msg;
+	std::cout << "NOBURINI\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (mode == '+')
+	{
+		if (this->_modes.find('n') != std::string::npos)
+			return false;
+		_modes += "n";
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " +n" + "\r\n";
+		this->sendAll(msg);	
+	}
+	else
+	{
+		if (this->_modes.find('n') == std::string::npos)
+			return false;
+		this->delMode('n');
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " -n" + "\r\n";
+		this->sendAll(msg);
+	}
+	return false;
+}
+
+bool				Channel::modeTOPIC(User &owner, char mode)
+{
+	std::string msg;
+	std::cout << "SECRET\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (mode == '+')
+	{
+		if (this->_modes.find('t') != std::string::npos)
+			return false;
+		_modes += "t";
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " +t" + "\r\n";
+		this->sendAll(msg);	
+	}
+	else
+	{
+		if (this->_modes.find('t') == std::string::npos)
+			return false;
+		this->delMode('t');
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " -t" + "\r\n";
+		this->sendAll(msg);
+	}
+	return false;
+}
+
+bool				Channel::modeSECRET(User &owner, char mode)
+{
+	std::string msg;
+	std::cout << "SECRET\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (mode == '+')
+	{
+		if (this->_modes.find('s') != std::string::npos)
+			return false;
+		_modes += "s";
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " +s" + "\r\n";
+		this->sendAll(msg);	
+	}
+	else
+	{
+		if (this->_modes.find('s') == std::string::npos)
+			return false;
+		this->delMode('s');
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " -s" + "\r\n";
+		this->sendAll(msg);
+	}
+	return false;
+}
+
+bool				Channel::modeMODERATE(User &owner, char mode)
+{
+	std::string msg;
+	std::cout << "MODERATE\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (mode == '+')
+	{
+		if (this->_modes.find('m') != std::string::npos)
+			return false;
+		_modes += "m";
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " +m" + "\r\n";
+		this->sendAll(msg);	
+	}
+	else
+	{
+		if (this->_modes.find('m') == std::string::npos)
+			return false;
+		this->delMode('m');
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " -m" + "\r\n";
+		this->sendAll(msg);
+	}
+	return false;
+}
+
+
+bool				Channel::modeINVITE(User &owner, char mode)
+{
+	std::string msg;
+	std::cout << "INVITE\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (mode == '-' && _modes.find('i') != std::string::npos)
+	{
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " -i" + "\r\n";
+		this->sendAll(msg);
+		this->delMode('i');
+	}
+	else if (_modes.find('i') == std::string::npos)
+	{
+		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " +i" + "\r\n";
+		this->sendAll(msg);
+		if (this->_modes.find('i') == std::string::npos)
+			_modes += "i";
+	}
+	return false;
+}
+
+bool				Channel::modeBAN(User &owner, char mode, std::string param)
+{
+	std::string msg;
+	std::cout << "BAN\n";
+	if (param == "" && mode == '-')
+		return false;
+	else if (param == "")
+	{
+		sendBanList(owner);
+		return false;
+	}
+	else if (mode == '+')
+		ban(owner, param);
+	else
+		unBan(owner, param);
+	return true;
+}
+
+bool				Channel::modeEXCINVITE(User &owner, char mode, std::string param)
+{
+	std::string msg;
+	std::cout << "EXE_INV\n";
+	if (param == "" && mode == '-')
+		return false;
+	else if (param == "")
+	{
+		sendExeInviteList(owner);
+		return false;
+	}
+	else if (mode == '+')
+		exception(owner, param, 'I');
+	else
+		unException(owner, param, 'I');
+	return true;
+}
+
+bool				Channel::modeEXCBAN(User &owner, char mode, std::string param)
+{
+	std::string msg;
+	std::cout << "EXE_BAN\n";
+	if (param == "" && mode == '-')
+		return false;
+	else if (param == "")
+	{
+		sendExeBanList(owner);
+		return false;
+	}
+	else if (mode == '+')
+		exception(owner, param, 'e');
+	else
+		unException(owner, param, 'e');
+	return true;
+}
+
+bool				Channel::modeOPERATOR(User &owner, char mode, std::string param)
+{
+	std::string msg;
+	std::cout << "SET OPERATOR\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (param == "")
+		return false;
+	else 
+	{
+		std::cout << "param not empty\n";
+		size_t i = 0;
+		for (; i< _users.size(); i++)
+			if (_users[i].second->getNick() == param)
+				break;
+		std::cout << "SIZE " <<i << "\n";
+		if (i < _users.size())
+		{
+			if (mode == '+')
+				_users[i].first = '@';
+			else
+				_users[i].first = '\0';
+			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+						" MODE " + _name + " " + mode +"o " + param +"\r\n";
+			this->sendAll(msg);
+		}
+		else
+			_server->getHandler()._numeric_reply(401, owner, param);
+	}
+	return true;
+}
+
+bool				Channel::modeLIMIT(User &owner, char mode, std::string param)
+{
+	std::string msg;
+	std::cout << "LIMIT\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	else if (mode == '+' && param != "")
+	{
+		int limit = std::atoi(param.c_str());
+		if (limit)
+		{
+			_limit = limit;
+			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+						" MODE " + _name + " +l :" + std::to_string(_limit) + "\r\n";
+			this->sendAll(msg);
+			if (this->_modes.find('l') == std::string::npos)
+				_modes += "l";
+		}
+		return (true);
+	}
+	else if (mode == '-' && this->_modes.find('l') == std::string::npos)
+	{
+		this->delMode('l');
+		_limit = INT32_MAX;
+		msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+						" MODE " + _name + ": -l\r\n";
+		this->sendAll(msg);
+	}
+	return false;			
+}
+bool				Channel::modeKEY(User &owner, char mode, std::string param)
+{
+	std::string msg;
+	std::cout << "KEY\n";
+	if (!this->isOperator(owner))
+		_server->getHandler()._numeric_reply(482, owner, _name);
+	if (param == "" )
+	{
+		msg = _name + " k * :You must specify a parameter.";
+		_server->getHandler()._numeric_reply(696,owner, msg);
+		return false;
+	}
+	else if (mode == '-')
+	{
+		if (param == _key)
+		{
+			_key = "";
+			this->delMode('k');
+			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " -k :"+ param + "\r\n";
+			this->sendAll(msg);
+		}
+		return true;
+	}
+	else
+	{
+		if (_key == "")
+		{
+			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" MODE " + _name + " +k :"+ param + "\r\n";
+			this->sendAll(msg);
+			if (this->_modes.find('k') == std::string::npos)
+				_modes += "k";
+		}
+		return true;
+	}
+}
+
+
 
 void				Channel::sendBanList(User &owner) 		const
 {
@@ -454,12 +608,6 @@ std::string		Channel::getLastStrUser()
 bool			Channel::isInChannel(User const & user) const
 {
 	return (isInChannel(user.getNick()));
-	/*for (u_int i=0; i < this->_users.size(); i++)
-	{
-		if (*(_users[i].second) == user)
-			return true;
-	}
-	return false;*/
 }
 
 bool			Channel::isInChannel(std::string const & nick) const

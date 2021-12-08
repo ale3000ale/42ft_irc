@@ -64,7 +64,13 @@ class Channel
 		bool				isOperator(std::string &user);
 		bool				empty();
 		void				delMode(char mode);
-		//TODO: 
+		//TODO:
+		void				invite(User &owner, std::string nick);
+		bool				isBanned(User &owner);
+		bool				canJoin(User &owner);
+		bool				canSendMsg(User &owner);
+		bool				isFull();
+
 		void				ban(User &owner, std::string nick);
 		void				exception(User &owner, std::string nick, char type);
 		void				unBan(User &owner, std::string nick);
@@ -72,7 +78,18 @@ class Channel
 		void				sendBanList(User &owner) const;
 		void				sendExeInviteList(User &owner) const;
 		void				sendExeBanList(User &owner) const;
-		
+
+		bool				modeINVITE(User &owner, char mode);
+		bool				modeBAN(User &owner, char mode, std::string param);
+		bool				modeEXCINVITE(User &owner, char mode, std::string param);
+		bool				modeEXCBAN(User &owner, char mode, std::string param);
+		bool				modeOPERATOR(User &owner, char mode, std::string param);
+		bool				modeLIMIT(User &owner, char mode, std::string param);
+		bool				modeKEY(User &owner, char mode, std::string param);
+		bool				modeMODERATE(User &owner, char mode);
+		bool				modeSECRET(User &owner, char mode);
+		bool				modeTOPIC(User &owner, char mode);
+		bool				modeNOBURINI(User &owner, char mode);
 
 		/*----GETTER STR----*/
 		std::string			getStrUsers() const;
