@@ -79,13 +79,13 @@ void Server::run()
 					}
 					else
 					{
-						User &curr = this->_users[i - 1];
+						User &curr = *this->_users[i - 1];
 						curr.buffer() += buf;
 						//std::cout<<curr.buffer()<<" size:"<<curr.buffer().size()<<"\n";
 						if (curr.buffer().find("\r\n") != std::string::npos)
 						{
 							_exec_cmd(curr);
-							std::cout<<curr.buffer();
+							//std::cout<<curr.buffer();
 						}
 					}
 				}
@@ -109,13 +109,19 @@ void Server::_addUser()
     	inet_ntop(AF_INET, &(((struct sockaddr_in*)casted_addr)->sin_addr), remoteIP, INET_ADDRSTRLEN);
     else
 		inet_ntop(AF_INET6, &(((struct sockaddr_in6*)casted_addr)->sin6_addr), remoteIP, INET6_ADDRSTRLEN);
-	this->_users.push_back(User(new_fd, remoteIP));
+	this->_users.push_back(new User(new_fd, remoteIP));
+	if (this->exist_channel("#insultaBOT"))
+	{
+		std::cout << "USERS IN CHANNEL AT LOGIN "<<_channels["#insultaBOT"].getStrUsers() << "FINISH LOGIN " <<"\n";
+
+	}
 }
 
 void Server::_deleteUser(int index)
 {
 	close(this->_pfds[index].fd); // closing client's fd
 	this->_pfds.erase(this->_pfds.begin() + index);
+	delete(this->_users[index - 1]);
 	this->_users.erase(this->_users.begin() + index - 1);
 }
 
@@ -123,7 +129,7 @@ void Server::deleteUser(std::string nick)
 {
 	for (u_int i = 0; i < this->_users.size(); i++)
 	{
-		if (this->_users[i].getNick() == nick)
+		if (this->_users[i]->getNick() == nick)
 			return (_deleteUser(i + 1));
 	}
 }
@@ -143,7 +149,7 @@ bool Server::checkPass(std::string& pass)
 	return (pass == this->_password);
 }
 
-std::vector<User> const & Server::getUserList() const
+std::vector<User*> const & Server::getUserList() const
 {
 	return (this->_users);
 }
@@ -215,11 +221,11 @@ int		Server::send_msg(std::string& msg, std::string target) const
 	
 	while (i < _users.size())
 	{
-		if (_users[i].getNick() == target)
+		if (_users[i]->getNick() == target)
 		{
-			if (_users[i].isAway())
+			if (_users[i]->isAway())
 				return (301);
-			send_msg(msg, _users[i]);
+			send_msg(msg, *_users[i]);
 			break ;
 		}
 		i++;
@@ -258,16 +264,15 @@ void			Server::sendAllChans(std::string msg, User& sender)
 	}
 }
 
-
 User const 		&Server::getUser(std::string user) const
 {
 	size_t i  = 0;
 	for (; i < _users.size(); i++)
 	{
-		if (_users[i].getNick() == user)
-			return _users[i];
+		if (_users[i]->getNick() == user)
+			return *_users[i];
 	}
-	return _users[i];
+	return *_users[i];
 }
 
 std::string		Server::getDateTimeCreated() const

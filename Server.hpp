@@ -36,7 +36,7 @@ class Server
 		bool			exist_channel(std::string name) const;
 		bool			add_channel(Channel ch);
 		Channel			&get_channel(std::string name);
-		std::vector<User> const & getUserList() const;
+		std::vector<User*> const & getUserList() const;
 		void			send_msg(std::string& msg, User const & target) const;
 		int				send_msg(std::string& msg, std::string target) const;
 		int				send_msg(std::string& msg, std::string target, User const & owner);
@@ -55,7 +55,7 @@ class Server
 		std::string						_password;
 		int								_socket_fd;
 		std::vector<struct pollfd>		_pfds;
-		std::vector<User>				_users;
+		std::vector<User*>				_users;
 		std::map<std::string, Channel>	_channels;
 		CommandHandler					_handler;
 
@@ -66,5 +66,6 @@ class Server
 		void						_addFd(int new_fd);
 		void 						_exec_cmd(User& executor);
 };
+
 
 #endif

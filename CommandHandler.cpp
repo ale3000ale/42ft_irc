@@ -96,10 +96,10 @@ void CommandHandler::_handleNICK(User& owner)
 	if (!this->_params.size() || this->_params.front() == "")
 		return _numeric_reply(431, owner); // ERR_NONICKNAMEGIVEN
 	std::string& nick = this->_params.front();
-	std::vector<User> const & users = this->_server.getUserList();
+	std::vector<User*> const & users = this->_server.getUserList();
 	for (u_int i = 0; i < users.size(); i++)
 	{
-		if (users[i].getNick() == nick)
+		if (users[i]->getNick() == nick)
 			return _numeric_reply(433, owner, nick); ; // ERR_NICKNAMEINUS
 	}
 	std::string old_nick = owner.getNick();
@@ -113,8 +113,17 @@ void CommandHandler::_handleNICK(User& owner)
 		_welcome_msg(owner);
 }
 
+void breakpoint() {
+	int i=0;
+	i = i+2;
+}
+
 void CommandHandler::_handleUSER(User& owner)
 {
+	static int i;
+	i++;
+	if (i==3)
+		breakpoint();
 	/*for (std::list<std::string>::iterator i =_params.begin(); i != _params.cend() ; i++)
 		std::cout<<*i<<" --- ";*/
 	if (this->_params.size() != 4)
@@ -185,7 +194,7 @@ void CommandHandler::_handleAWAY(User& owner)
 
 void CommandHandler::_handleJOIN(User& owner)
 {
-	
+
 	if (_params.empty())
 		return ; //ERR_NEEDMOREPARAMS (461)
 	std::list<std::string> names;
@@ -223,6 +232,7 @@ void CommandHandler::_handleJOIN(User& owner)
 			std::cout << "ADDED"<< std::endl;
 			stat = '@';
 		}
+		//std::cout<<"there are"<<_server.getchannelList().size()<<"existing chans\n";
 
 		Channel &chan = _server.get_channel(names.front());
 		std::cout << "JOINING "<< chan.getName() << " key " << chan.getKey() << std::endl;
@@ -284,12 +294,14 @@ void CommandHandler::_handleQUIT(User& owner)
 	this->_server.send_msg(msg, owner);
 	msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " QUIT :Quit: " + reason + "\r\n";
 	this->_server.sendAllChans(msg, owner);
+	std::cout<<"HANDLE QUIT :\n";
+	
 	this->_server.deleteUser(owner.getNick());
 }
 
 void CommandHandler::_handleWHO(User& owner) const
 {
-	const std::vector<User> &us =  _server.getUserList();
+	const std::vector<User*> &us =  _server.getUserList();
 	std::string msg;
 	Channel ch;
 	if (_params.empty())
@@ -298,11 +310,11 @@ void CommandHandler::_handleWHO(User& owner) const
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
 			/*std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; */
-			if (!((us[i].commonChannel(owner.getChannels())) || us[i].hasMode('i')) || us[i] == owner)
+			if (!((us[i]->commonChannel(owner.getChannels())) || us[i]->hasMode('i')) || *us[i] == owner)
 			{		
 				//std::cout << "WHO EMPTY no match "<< i << std::endl;														// TODO: server.host server.name  					wtf is H/G
-				msg = (us[i].getChannels().empty() ? "* " : us[i].getChannels().back()+ " ") + us[i].getUsername() + " " + us[i].getHost() + " myIRCServer " + us[i].getNick() +
-				 " H :0 "  + us[i].getRealname();
+				msg = (us[i]->getChannels().empty() ? "* " : us[i]->getChannels().back()+ " ") + us[i]->getUsername() + " " + us[i]->getHost() + " myIRCServer " + us[i]->getNick() +
+				 " H :0 "  + us[i]->getRealname();
 				_numeric_reply(352, owner, msg);
 			}
 			//std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl;
@@ -412,9 +424,9 @@ void	CommandHandler::_handleMODE(User& owner)
 	}
 	else	// USER MODE
 	{
-		std::vector<User> users = this->_server.getUserList();
+		std::vector<User*> users = this->_server.getUserList();
 		uint i=0;
-		for (; i<users.size() && users[i].getNick() != target; i++) ;
+		for (; i<users.size() && users[i]->getNick() != target; i++) ;
 		if (i == users.size())
 			return (_numeric_reply(401, owner, target)); // ERR_NOSUCHNICK
 		if (owner.getNick() != target)
@@ -488,13 +500,13 @@ void	CommandHandler::_handleNAMES(User& owner)
 			_numeric_reply(353,owner, msg);
 			_numeric_reply(366,owner, (*i).second.getName());
 		}
-		const std::vector<User> & users = _server.getUserList();
+		const std::vector<User*> & users = _server.getUserList();
 		std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + " ";
 		for (size_t i = 0; i < users.size() ; i++)
 		{
-			if (!users[i].getChannels().size())
+			if (!users[i]->getChannels().size())
 			{
-				msg +=  users[i].getNick() + " * " ;
+				msg +=  users[i]->getNick() + " * " ;
 			}
 		}
 		msg += "\r\n";
@@ -510,16 +522,16 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 	{
 		case 1: // RPL_WELCOME
 			msg += "001 " + owner.getNick() + " :Welcome to the Internet Relay Network ";
-			msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost();
-			break;
+			msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + "\r\n";
+			//break;
 		case 2: // RPL_YOURHOST
-			msg += "002 " + owner.getNick() + " :Your host is myIRCServer, running version IRC1.0";
-			break;
+			msg += ":myIRCServer 002 " + owner.getNick() + " :Your host is myIRCServer, running version IRC1.0\r\n";
+			//break;
 		case 3: // RPL_CREATED
-			msg += "003 " + owner.getNick() + " :This server was created " + extra;
-			break;
+			msg += ":myIRCServer 003 " + owner.getNick() + " :This server was created " + extra + "\r\n";
+			//break;
 		case 4: // RPL_MYINFO
-			msg += "004 " + owner.getNick() + " myIRCServer IRC1.0 " + UMODES + " " + CMODES;
+			msg += ":myIRCServer 004 " + owner.getNick() + " myIRCServer IRC1.0 " + UMODES + " " + CMODES+"\r\n";
 			break;
 		case 221: // RPL_UMODEIS
 			msg += "221 " + owner.getNick() + " " + owner.getModes();
@@ -647,8 +659,8 @@ void	CommandHandler::_welcome_msg(User& target) const
 {
 	target.set_registered();
 	_numeric_reply(1, target); // RPL_WELCOME
-	_numeric_reply(2, target); // RPL_YOURHOST
+	/*_numeric_reply(2, target); // RPL_YOURHOST
 	_numeric_reply(3, target, this->_server.getDateTimeCreated()); // RPL_CREATED
-	_numeric_reply(4, target); // RPL_MYINFO
+	_numeric_reply(4, target); // RPL_MYINFO*/
 	// TODO: LUSERS
 }
