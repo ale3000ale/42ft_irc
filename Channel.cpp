@@ -43,28 +43,6 @@ Channel::~Channel()
 {
 }
 
-
-/*
-** --------------------------------- OVERLOAD ---------------------------------
-*/
-
-/* Channel &				Channel::operator=( Channel const & rhs )
-{
-	if ( this != &rhs )
-	{
-
-		this->_value = rhs.getValue();
-	}
-	return *this;
-} */
-
-/*std::ostream &			operator<<( std::ostream & o, Channel const & i )
-{
-	//o << "Value = " << i.getValue();
-	return o;
-}*/
-
-
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
@@ -210,6 +188,7 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 		case 'n':
 			return modeNOBURINI(owner, mode);
 	}
+	_server->getHandler()._numeric_reply(472, owner, std::string(1, m));
 	return false;
 }
 
@@ -500,6 +479,93 @@ bool				Channel::modeKEY(User &owner, char mode, std::string param)
 	}
 }
 
+void				Channel::invite(User &owner, std::string nick)
+{
+	if (!this->isInChannel(owner))
+		return (_server->getHandler()._numeric_reply(442, owner, _name));
+	if (!this->isOperator(owner))
+		return (_server->getHandler()._numeric_reply(482, owner, _name));
+	if (this->isInChannel(nick))
+		return (_server->getHandler()._numeric_reply(443, owner, nick + " "+ _name));
+	_invite.insert(nick);
+	_server->getHandler()._numeric_reply(341, owner, nick + " "+ _name);
+	std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
+							" INVITE " + nick + " :"+ _name + "\r\n";
+	_server->send_msg(msg, nick);
+	
+	
+}
+
+bool				Channel::isInvited(std::string owner) const
+{
+	return (_invite.find(owner) != _invite.end() ||
+			_excInviteList.find(owner) != _excInviteList.end());
+}
+
+bool				Channel::isInvited(User &owner) const
+{
+	return (_invite.find(owner.getNick()) != _invite.end() ||
+			_excInviteList.find(owner.getNick()) != _excInviteList.end());
+}
+
+bool				Channel::isBanned(std::string owner) const
+{
+	return (_banList.find(owner) != _banList.end() &&
+			_excBanList.find(owner) == _excBanList.end());
+}
+
+
+bool				Channel::isBanned(User &owner) const
+{
+	return (_banList.find(owner.getNick()) != _banList.end() &&
+			_excBanList.find(owner.getNick()) == _excBanList.end());
+}
+
+bool				Channel::canJoin(User &owner) const
+{
+	if (_modes.find('i') != std::string::npos && this->isInvited(owner))
+	{
+		_server->getHandler()._numeric_reply(471, owner, _name);
+		return false;
+	}
+	if (_modes.find('l') != std::string::npos && this->isFull())
+	{
+		_server->getHandler()._numeric_reply(471, owner, _name);
+		return false;
+	}
+	if (this->isBanned(owner))
+	{
+		_server->getHandler()._numeric_reply(443, owner, _name);
+		return false;
+	}
+	return (true);
+}
+
+bool				Channel::canSendMsg(User &owner) const
+{
+	if (_modes.find('n') != std::string::npos && !this->isInChannel(owner))
+	{
+		//TODO: check      _server->getHandler()._numeric_reply(404, owner, _name);
+		_server->getHandler()._numeric_reply(442, owner, _name);
+		return false;
+	}
+	if (this->isBanned(owner))
+	{
+		_server->getHandler()._numeric_reply(443, owner, _name);
+		return false;
+	}
+	if (_modes.find('m') != std::string::npos && this->isOperator(owner))
+	{
+		_server->getHandler()._numeric_reply(482, owner, _name);
+		return false;
+	}
+	return (true);
+}
+
+bool				Channel::isFull() const
+{
+	return (size_t(_limit) >= _users.size());
+}
 
 
 void				Channel::sendBanList(User &owner) 		const
@@ -650,7 +716,7 @@ bool			Channel::removeUser(User &user)
 	return (true);*/
 }
 
-bool			Channel::isOperator(User &user)
+bool			Channel::isOperator(User &user) const
 {
 	u_int i = 0;
 	for( ; i < _users.size(); i++)
@@ -661,7 +727,7 @@ bool			Channel::isOperator(User &user)
 	return false;
 }
 
-bool			Channel::isOperator(std::string &user)
+bool			Channel::isOperator(std::string &user) const
 {
 	u_int i = 0;
 	for( ; i < _users.size(); i++)

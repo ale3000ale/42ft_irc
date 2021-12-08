@@ -128,7 +128,7 @@ fast_git:	fclean
 			read PUSH;\
 			git add $$PUSH && clear;\
 			git status
-		    echo "Write the commit:";\
+		    @ echo "Write the commit:";\
 			read COMMIT;\
 			git commit -m  "$$COMMIT" && git push
 

@@ -38,6 +38,7 @@ class Channel
 		std::set<std::string>  _excBanList;
 		std::set<std::string>  _excInviteList;
 		std::set<std::string>  _inviteList;
+		std::set<std::string>  _invite;
 		std::vector<std::pair<char,User *> > _users;
 
 	public:
@@ -60,16 +61,19 @@ class Channel
 		bool				isInChannel(std::string const & nick) const;
 		bool				addMode(User &owner, char m, char mode, std::string param = "");
 		void				kick(User &user, std::list<std::string> &users, std::string msg = "Because me stai sul cazzo");
-		bool				isOperator(User &user);
-		bool				isOperator(std::string &user);
+		bool				isOperator(User &user) const;
+		bool				isOperator(std::string &user) const;
 		bool				empty();
 		void				delMode(char mode);
 		//TODO:
 		void				invite(User &owner, std::string nick);
-		bool				isBanned(User &owner);
-		bool				canJoin(User &owner);
-		bool				canSendMsg(User &owner);
-		bool				isFull();
+		bool				isBanned(User &owner) const;
+		bool				canJoin(User &owner) const;
+		bool				canSendMsg(User &owner) const;
+		bool				isFull() const;
+		bool				isInvited(User &owner) const;
+		bool				isInvited(std::string owner) const;
+		bool				isBanned(std::string owner) const;
 
 		void				ban(User &owner, std::string nick);
 		void				exception(User &owner, std::string nick, char type);

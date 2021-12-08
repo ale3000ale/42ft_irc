@@ -264,6 +264,16 @@ void			Server::sendAllChans(std::string msg, User& sender)
 	}
 }
 
+bool			Server::exist_user(std::string name) const
+{
+	size_t i = 0;
+	for (;i< _users.size(); i++)
+		if (_users[i]->getNick() == name)
+			return true;
+	return false;
+
+}
+
 User const 		&Server::getUser(std::string user) const
 {
 	size_t i  = 0;

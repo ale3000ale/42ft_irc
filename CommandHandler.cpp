@@ -75,6 +75,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleTOPIC(owner);
 	else if (this->_command == "NAMES")
 		_handleNAMES(owner);
+	else if (this->_command == "INVITE")
+		_handleINVITE(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
@@ -514,7 +516,23 @@ void	CommandHandler::_handleNAMES(User& owner)
 	}
 }	
 
-void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
+void		CommandHandler::_handleINVITE(User& owner)
+{
+	std::string msg = "";
+	std::string nick;
+	if (_params.size() < 2 || _params.back() == "")
+		return (_numeric_reply(461, owner, _command));
+	nick = _params.front();
+	if (!_server.exist_user(_params.front()))
+		return (_numeric_reply(401, owner, _params.front()));
+	_params.pop_front();
+	if (!_server.exist_channel(_params.front()))
+		return (_numeric_reply(403, owner, _params.front()));
+	Channel &ch = _server.get_channel(_params.front());
+	ch.invite(owner, nick);
+}
+
+void		CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
 {
 	std::string msg = ":myIRCServer ";
 
@@ -561,7 +579,10 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			msg += "332 " + owner.getNick() + " " + extra;
 			break;
 		case 333: // RPL_TOPICWHOTIME
-			msg += "333 " + owner.getNick() + " " + extra + "";
+			msg += "333 " + owner.getNick() + " " + extra;
+			break;
+		case 341: // RPL_INVITING
+			msg += "341 " + owner.getNick() + " " + extra;
 			break;
 		case 346: // RPL_INVITELIST 
 			msg += "346 " + owner.getNick() + " " + extra;
@@ -620,6 +641,9 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 		case 442: // ERR_NOTONCHANNEL 
 			msg += "442 " + owner.getNick() + " " + extra + " :You're not on that channel";
 			break;
+		case 443: // ERR_USERONCHANNEL 
+			msg += "443 " + owner.getNick() + " " + extra + " :is already on channel";
+			break;
 		case 451: // ERR_NOTREGISTERED
 			msg += "451 " + extra + " :You have not registered";
 			break;
@@ -631,6 +655,18 @@ void	CommandHandler::_numeric_reply(int val, User& owner, std::string extra) con
 			break;
 		case 464: // ERR_PASSWDMISMATCH
 			msg += "464 " + owner.getHost() + " :Password incorrect";
+			break;
+		case 471: // ERR_CHANNELISFULL
+			msg += "471 " + owner.getNick() + " " + extra + " :Cannot join channel (+l)";
+			break;
+		case 472: // ERR_UNKNOWNMODE
+			msg += "472 " + owner.getNick() + " " + extra + " :is unknown mode char to me";
+			break;
+		case 473: // ERR_INVITEONLYCHAN
+			msg += "473 " + owner.getNick() + " " + extra + " :Cannot join channel (+i)";
+			break;
+		case 474: // ERR_BANNEDFROMCHAN
+			msg += "474 " + owner.getNick() + " " + extra + " :Cannot join channel (+b)";
 			break;
 		case 475: // ERR_BADCHANNELKEY
 			msg += "475 " + owner.getNick() + " " + extra + " :Cannot join channel (+k)";

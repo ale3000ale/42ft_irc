@@ -34,6 +34,7 @@ class Server
 		void 			run();
 		bool 			checkPass(std::string &pass);
 		bool			exist_channel(std::string name) const;
+		bool			exist_user(std::string name) const;
 		bool			add_channel(Channel ch);
 		Channel			&get_channel(std::string name);
 		std::vector<User*> const & getUserList() const;
