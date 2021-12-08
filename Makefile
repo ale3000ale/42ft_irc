@@ -122,7 +122,11 @@ leaks:
 			@ leaks --atExit -- ./$(NAME)
 
 fast_git:	fclean
-			git add . && git commit -m "$CM" && git push
+		    @echo "Write the commit:";\
+			read COMMIT;\
+			git add . && git commit -m  "$$COMMIT" && git push
+
+# git add . && git commit -m "$CM" && git push
 
 clear_space:
 			@rm -rf ~/Library/Caches
