@@ -29,7 +29,7 @@ class Server
 	public:
 		
 		Server(std::string port, std::string password);
-		~Server();
+		~Server();		//TODO: delete all USER
 
 		void 			run();
 		bool 			checkPass(std::string &pass);

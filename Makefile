@@ -122,11 +122,14 @@ leaks:
 			@ leaks --atExit -- ./$(NAME)
 
 fast_git:	fclean
+			@clear
+			@git status
 			@echo "What should I push?";\
 			read PUSH;\
-			git add $$PUSH &&\
+			git add $$PUSH && clear;\
+			git status
 		    echo "Write the commit:";\
-			read COMMIT && \
+			read COMMIT;\
 			git commit -m  "$$COMMIT" && git push
 
 # git add . && git commit -m "$CM" && git push
@@ -144,4 +147,4 @@ clear_space:
 			@rm -rf ~/Library/Containers/com.docker.docker
 
 
-.PHONY: 	all clean fclean re norme  debug re-debug leaks clear_space
+.PHONY: 	all clean fclean re norme  debug re-debug leaks clear_space fast_git
