@@ -21,9 +21,36 @@ Bot::Bot(std::string server_ip, std::string port, std::string password) : _serve
 		throw std::runtime_error("connect: " + std::string(strerror(errno)));
 	}
 	freeaddrinfo(ai);
+
+	_load_insults(INSULTS_PATH);
 }
 
 Bot::~Bot() {}
+
+void	Bot::_load_insults(const char *file)
+{
+	std::fstream my_file;
+	my_file.open(file, std::ios::in);
+	if (!my_file)
+		throw std::runtime_error("open: No input file for insults");
+	
+	my_file >> std::noskipws;
+	
+	std::string line;
+	char ch;
+
+	do {
+		my_file >> ch;
+		if (ch == '\n')
+		{
+			this->_insults.push_back(line);
+			line.clear();
+		}
+		else
+			line += ch;
+	} while (!my_file.eof());
+	my_file.close();
+}
 
 void	Bot::run()
 {
@@ -50,6 +77,7 @@ void	Bot::run()
 			throw std::runtime_error("recv: " + std::string(strerror(errno)));
 		// TODO: parse messages
 		std::cout<<this->_buff;
+		_handle_cmd(_get_cmd(this->_buff));
 	}
 }
 
@@ -59,13 +87,13 @@ int	Bot::_register()
 	int nbytes;
 	sleep(1);
 	msg = "PASS " + this->_password + "\r\n";
-	send(this->_socket_fd, msg.c_str(), msg.length(), 0);
+	_send_msg(msg);
 	msg = "NICK insultaBOT\r\n";
-	send(this->_socket_fd, msg.c_str(), msg.length(), 0);
+	_send_msg(msg);
 	msg = "USER bot_user 0 * :insulta BOT\r\n";
-	send(this->_socket_fd, msg.c_str(), msg.length(), 0);
+	_send_msg(msg);
 	msg = "JOIN #insultaBOT\r\n";
-	send(this->_socket_fd, msg.c_str(), msg.length(), 0);
+	_send_msg(msg);
 	memset(this->_buff, 0, sizeof(this->_buff));
 	nbytes = recv(this->_socket_fd, this->_buff, sizeof(this->_buff), 0);
 	
@@ -75,9 +103,62 @@ int	Bot::_register()
 	return (numeric);
 }
 
-int Bot::_get_numeric(std::string cmd) const
+void Bot::_send_msg(std::string msg) const
 {
-	cmd.erase(0, cmd.find(" ") + 1);
-	std::string numeric = cmd.substr(0, cmd.find(" "));
+	send(this->_socket_fd, msg.c_str(), msg.length(), 0);
+}
+
+void	Bot::_handleJOIN() const
+{
+	std::string msg = "PRIVMSG #insultaBOT :";
+	std::string sender = _get_sender(this->_buff);
+	msg += sender + " é appena arrivato, SPERIAMO NON SIA DA ‘A LAZZIO\r\n";
+	_send_msg(msg);
+}
+
+void	Bot::_handlePRIVMSG() const
+{
+	srand(time(nullptr));
+	std::string insult = this->_insults[rand() % this->_insults.size()];
+	std::string msg = "PRIVMSG #insultaBOT :";
+	std::string sender = _get_sender(this->_buff);
+	msg += sender + ", " + insult + "\r\n";
+	_send_msg(msg);
+}
+
+void	Bot::_handlePART() const
+{
+	std::string msg = "PRIVMSG #insultaBOT :";
+	std::string sender = _get_sender(this->_buff);
+	msg += sender + " s'é tirato, E 'STI CAZZI\r\n";
+	_send_msg(msg);
+}
+
+void	Bot::_handle_cmd(std::string cmd) const
+{
+	if (cmd == "JOIN")
+		_handleJOIN();
+	if (cmd == "PRIVMSG")
+		_handlePRIVMSG();
+	if (cmd == "PART" || cmd == "QUIT")
+		_handlePART();
+}
+
+int Bot::_get_numeric(std::string buff) const
+{
+	buff.erase(0, buff.find(" ") + 1);
+	std::string numeric = buff.substr(0, buff.find(" "));
 	return (std::atoi(numeric.c_str()));
+}
+
+std::string	Bot::_get_cmd(std::string buff) const
+{
+	buff.erase(0, buff.find(" ") + 1);
+	return (buff.substr(0, buff.find(" ")));
+}
+
+std::string	Bot::_get_sender(std::string buff) const
+{
+	buff.erase(0, 1); // deleting first ":"
+	return (buff.substr(0, buff.find("!")));
 }
