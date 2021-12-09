@@ -54,9 +54,9 @@ OBJS_DIR	=		objs
 
 OBJS_DEBUG_DIR	=	objs_debug
 
-HPPS		=		Channel.hpp        CommandHandler.hpp Server.hpp         User.hpp
+HPPS		=		Bot.hpp
 
-SRCS		= 		Channel.cpp        CommandHandler.cpp Server.cpp         User.cpp           main.cpp
+SRCS		= 		Bot.cpp main.cpp
 
 EXTRA_CLEAN	=		# extra file do u want delete
 				
@@ -64,7 +64,7 @@ EXTRA_CLEAN	=		# extra file do u want delete
 
 # chose a NAME for your program
 
-NAME		=		irc_server
+NAME		=		insultaBOT
 
 CPP 		= 		@ clang++
 
@@ -108,10 +108,6 @@ fclean:		clean
 re:			fclean all
 			@ echo $(BGREEN) "$(NAME) recompiled successfully ♻️ ✅" $(COLOR_OFF)
 
-bot:		
-			@ make -C ./bot/
-			@ mv ./bot/insultaBOT .
-
 debug:		$(OBJS_DEBUG)
 			@ $(CPP) $(CFLAGS) $(OBJS_DEBUG) -o $(NAME)
 			@ echo $(DEBUG_COLOR) "$(NAME) DEBUG compiled successfully  🚫🐛 ✅"
@@ -151,4 +147,4 @@ clear_space:
 			@rm -rf ~/Library/Containers/com.docker.docker
 
 
-.PHONY: 	all clean fclean re norme  debug re-debug leaks clear_space fast_git bot
+.PHONY: 	all clean fclean re norme  debug re-debug leaks clear_space fast_git

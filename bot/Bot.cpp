@@ -75,8 +75,6 @@ void	Bot::run()
 			throw std::runtime_error("Connection to server lost");
 		if (nbytes < 0)
 			throw std::runtime_error("recv: " + std::string(strerror(errno)));
-		// TODO: parse messages
-		std::cout<<this->_buff;
 		_handle_cmd(_get_cmd(this->_buff));
 	}
 }
@@ -110,20 +108,44 @@ void Bot::_send_msg(std::string msg) const
 
 void	Bot::_handleJOIN() const
 {
-	std::string msg = "PRIVMSG #insultaBOT :";
 	std::string sender = _get_sender(this->_buff);
-	msg += sender + " é appena arrivato, SPERIAMO NON SIA DA ‘A LAZZIO\r\n";
+	if (sender == "insultaBOT")
+		return ;
+	std::string header = "PRIVMSG #insultaBOT :";
+	std::string msg = header + sender + " é appena arrivato, SPERIAMO NON SIA DA ‘A LAZZIO\r\n";
+	_send_msg(msg);
+	msg = header + "** comandi disponibili ** INSULTAMI / INSULTA <NAME> / COMANDI\r\n";
 	_send_msg(msg);
 }
 
 void	Bot::_handlePRIVMSG() const
 {
+	std::string text = _get_text(this->_buff);
 	srand(time(nullptr));
-	std::string insult = this->_insults[rand() % this->_insults.size()];
 	std::string msg = "PRIVMSG #insultaBOT :";
-	std::string sender = _get_sender(this->_buff);
-	msg += sender + ", " + insult + "\r\n";
-	_send_msg(msg);
+	if (text == ":COMANDI\r\n" || text.substr(0, text.find(" ")) == ":COMANDI")
+		msg += "** comandi disponibili ** INSULTAMI / INSULTA <NAME> / COMANDI\r\n";
+	else
+	{
+		std::string insult = this->_insults[rand() % this->_insults.size()];
+		std::string sender = _get_sender(this->_buff);
+		if (text == ":INSULTAMI\r\n" || text.substr(0, text.find(" ")) == ":INSULTAMI")
+			msg += sender + ", " + insult + "\r\n";
+		else if (text == ":INSULTA\r\n" || text.substr(0, text.find(" ")) == ":INSULTA")
+		{
+			int pos = std::string(text).find(" ");
+			if (pos != -1)
+			{
+				sender = std::string(text).substr(pos);
+				sender.pop_back();
+				sender.pop_back(); // deleting \r\n
+			}
+			msg += sender + ", " + insult + "\r\n";
+			std::cout<<"TEST: " + msg;
+		}
+	}
+	if (msg != "PRIVMSG #insultaBOT :")
+		_send_msg(msg);
 }
 
 void	Bot::_handlePART() const
@@ -161,4 +183,12 @@ std::string	Bot::_get_sender(std::string buff) const
 {
 	buff.erase(0, 1); // deleting first ":"
 	return (buff.substr(0, buff.find("!")));
+}
+
+std::string	Bot::_get_text(std::string buff) const
+{
+	int pos = buff.find(" ") + 1; // source
+	pos = buff.find(" ", pos) + 1; // PRIVMSG
+	pos = buff.find(" ", pos) + 1; // #insultaBOT
+	return (buff.substr(pos));
 }
