@@ -502,30 +502,36 @@ bool				Channel::isInvited(std::string owner) const
 			_excInviteList.find(owner) != _excInviteList.end());
 }
 
-bool				Channel::isInvited(User &owner) const
+bool				Channel::isInvited(User const &owner) const
 {
 	return (_invite.find(owner.getNick()) != _invite.end() ||
 			_excInviteList.find(owner.getNick()) != _excInviteList.end());
 }
 
-bool				Channel::isBanned(std::string owner) const
+bool				Channel::isBanned(std::string const owner) const
 {
 	return (_banList.find(owner) != _banList.end() &&
 			_excBanList.find(owner) == _excBanList.end());
 }
 
 
-bool				Channel::isBanned(User &owner) const
+bool				Channel::isBanned(User const &owner) const
 {
 	return (_banList.find(owner.getNick()) != _banList.end() &&
 			_excBanList.find(owner.getNick()) == _excBanList.end());
 }
 
-bool				Channel::canJoin(User &owner) const
+bool				Channel::canJoin(User const &owner) const
 {
+	if (this->isInChannel(owner))
+	{
+		_server->getHandler()._numeric_reply(443, owner, owner.getNick() + " " + _name);
+		std::cout << "User: " + owner.getNick() + ":" + owner.getUsername() + " is already in the channel!\n";
+		return (false);
+	}
 	if (_modes.find('i') != std::string::npos && this->isInvited(owner))
 	{
-		_server->getHandler()._numeric_reply(471, owner, _name);
+		_server->getHandler()._numeric_reply(473, owner, _name);
 		return false;
 	}
 	if (_modes.find('l') != std::string::npos && this->isFull())
@@ -533,25 +539,25 @@ bool				Channel::canJoin(User &owner) const
 		_server->getHandler()._numeric_reply(471, owner, _name);
 		return false;
 	}
-	if (this->isBanned(owner))
+	if (this->isBanned(owner) && (_invite.find(owner.getNick()) == _invite.end()))
 	{
-		_server->getHandler()._numeric_reply(443, owner, _name);
+		_server->getHandler()._numeric_reply(474, owner, _name);
 		return false;
 	}
 	return (true);
 }
 
-bool				Channel::canSendMsg(User &owner) const
+bool				Channel::canSendMsg(User const &owner) const
 {
 	if (_modes.find('n') != std::string::npos && !this->isInChannel(owner))
 	{
-		//TODO: check      _server->getHandler()._numeric_reply(404, owner, _name);
+		_server->getHandler()._numeric_reply(404, owner, _name);
 		_server->getHandler()._numeric_reply(442, owner, _name);
 		return false;
 	}
 	if (this->isBanned(owner))
 	{
-		_server->getHandler()._numeric_reply(443, owner, _name);
+		_server->getHandler()._numeric_reply(474, owner, _name);
 		return false;
 	}
 	if (_modes.find('m') != std::string::npos && this->isOperator(owner))
@@ -601,13 +607,10 @@ void				Channel::sendExeBanList(User &owner)	const
 	_server->getHandler()._numeric_reply(349, owner, _name);
 }
 
-int			Channel::join_user(User &user, std::string key , char status = 0)
+void			Channel::join_user(User &user, std::string key , char status = 0)
 {
-	if (this->isInChannel(user))
-	{
-		std::cout << "User: " + user.getNick() + ":" + user.getUsername() + " is already in the channel!\n";
-		return (0);
-	}
+	if (!this->canJoin(user))
+		return ;
 	std::cout << "PASS: " + _key + "\n";
 	if (key == _key)
 	{
@@ -619,11 +622,10 @@ int			Channel::join_user(User &user, std::string key , char status = 0)
 			_server->getHandler()._numeric_reply(332, user, _name);
 		_server->getHandler()._numeric_reply(353, user, "= "+_name + " :"+ this->getStrUsers());
 		_server->getHandler()._numeric_reply(366, user, _name);
-		return (1);
+		return ;
 	}
 	else
 		_server->getHandler()._numeric_reply(475, user, _name);
-	return(475);	//ERR_BADCHANNELKEY (475)
 }
 
 void	Channel::part_user(User &user)
@@ -716,7 +718,7 @@ bool			Channel::removeUser(User &user)
 	return (true);*/
 }
 
-bool			Channel::isOperator(User &user) const
+bool			Channel::isOperator(User const &user) const
 {
 	u_int i = 0;
 	for( ; i < _users.size(); i++)
@@ -727,7 +729,7 @@ bool			Channel::isOperator(User &user) const
 	return false;
 }
 
-bool			Channel::isOperator(std::string &user) const
+bool			Channel::isOperator(std::string const &user) const
 {
 	u_int i = 0;
 	for( ; i < _users.size(); i++)
@@ -780,9 +782,9 @@ void				Channel::setTopic(User &user, std::string &topic)
 {
 	if (!this->isInChannel(user))
 		_server->getHandler()._numeric_reply(442, user, _name);
-	else if (!isOperator(user))
+	else if (_modes.find('t') != std::string::npos &&  !isOperator(user))
 		_server->getHandler()._numeric_reply(482, user, _name);
-	else 
+	else
 	{
 		_topic = topic;
 		_topicSetter = user.getNick();
@@ -804,8 +806,13 @@ void				Channel::setTopic(User &user, std::string &topic)
 	std::string const & Channel::getModes() const
 	{ return (this->_modes); }
 
-	std::string 	Channel::getName() const
-	{return _name;}
+	std::string 	Channel::getName(bool ck) const
+	{
+		if (!ck || _modes.find('s') == std::string::npos)
+			return _name;
+		else
+			return "*";
+	}
 
 	std::string 	Channel::getKey() const
 	{
@@ -854,6 +861,12 @@ Channel::excIB_list_type const		&Channel::getExeBanList() const
 {
 	return (_excBanList);
 }
+
+size_t			 					Channel::getUserCount() const
+{
+	return (_users.size());
+}
+
 /*
 ** --------------------------------- EXCEPTION --------------------------------
 */

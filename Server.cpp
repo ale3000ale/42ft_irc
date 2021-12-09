@@ -200,15 +200,15 @@ void	Server::send_msg(std::string& msg, User const & target) const
         perror("send");
 }
 
-int		Server::send_msg(std::string& msg, std::string target, User const & owner)
+int		Server::send_msg(std::string& msg, std::string target, User const & owner) 
 {
 	if (exist_channel(target))
 	{
 		Channel& tmp_chan = get_channel(target);
-		if (!tmp_chan.isInChannel(owner))
-			return (404);
-		else
+		if (tmp_chan.canSendMsg(owner))
 			tmp_chan.sendAll(msg, owner.getNick());
+		else
+			return (0);
 	}
 	else
 		return (401);
@@ -240,7 +240,6 @@ CommandHandler	Server::getHandler() const
 	return (_handler);
 }
 
-// TODO: not working
 void			Server::sendAllChans(std::string msg, User& sender)
 {
 	_chan_it it = this->_channels.cbegin();

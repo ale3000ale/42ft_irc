@@ -27,7 +27,9 @@
 class Server
 {
 	public:
-		
+		typedef  std::map<std::string, Channel> 					channels_type;
+		typedef  std::map<std::string, Channel>::const_iterator 	channels_citerator;
+	public:
 		Server(std::string port, std::string password);
 		~Server();		//TODO: delete all USER
 

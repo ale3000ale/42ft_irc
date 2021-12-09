@@ -77,6 +77,8 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 		_handleNAMES(owner);
 	else if (this->_command == "INVITE")
 		_handleINVITE(owner);
+	else if (this->_command == "LIST")
+		_handleLIST(owner);
 	else
 		_numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
 }
@@ -221,7 +223,8 @@ void CommandHandler::_handleJOIN(User& owner)
 			}
 		_params.pop_front();
 	}
-
+	if (names.front()[0] != '#')
+		return (_numeric_reply(403,owner, names.front()));
 	while(!names.empty())
 	{
 		char stat  = 0;
@@ -331,14 +334,14 @@ void CommandHandler::_handleWHO(User& owner) const
 		{
 			//std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
 			if (users[i].first)
-				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
+				msg = ch.getName(true) + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
 				" H" + users[i].first + " :0 " + users[i].second->getRealname();
 			else
-				msg = ch.getName() + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
+				msg = ch.getName(true) + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
 				" H :0 " + users[i].second->getRealname();
 			_numeric_reply(352, owner, msg);
 		}
-		_numeric_reply(315, owner, ch.getName());
+		_numeric_reply(315, owner, ch.getName(true));
 	}
 }
 
@@ -486,10 +489,19 @@ void	CommandHandler::_handleTOPIC(User& owner)
 	}
 }
 
-/* void	CommandHandler::_handleLIST(User& owner)
+void	CommandHandler::_handleLIST(User& owner)
 {
-	
-} */
+	//thalassa.designations.org 322 amarcell #ao 1 :[+nt] bella zi che dici !!!!!!!
+	_numeric_reply(321,owner);
+	std::string msg = "";
+	const Server::channels_type		&chs = _server.getchannelList();
+	for (Server::channels_citerator i = chs.cbegin(); i != chs.cend(); i++)
+	{
+		msg = (*i).second.getName(true) + " " + std::to_string((*i).second.getUserCount()) + " :[+" + (*i).second.getModes() + "] " + (*i).second.getTopic();
+		_numeric_reply(322, owner, msg);
+	}
+	_numeric_reply(323, owner);
+}
 
 void	CommandHandler::_handleNAMES(User& owner)
 {
@@ -498,9 +510,9 @@ void	CommandHandler::_handleNAMES(User& owner)
 		for (std::map<std::string, Channel>::const_iterator i = _server.getchannelList().cbegin();
 			i != _server.getchannelList().cend() ; i++)
 		{
-			std::string msg = "= " + (*i).second.getName() + " :"+  (*i).second.getStrUsers() ;
+			std::string msg = "= " + (*i).second.getName(true) + " :"+  (*i).second.getStrUsers() ;
 			_numeric_reply(353,owner, msg);
-			_numeric_reply(366,owner, (*i).second.getName());
+			_numeric_reply(366,owner, (*i).second.getName(true));
 		}
 		const std::vector<User*> & users = _server.getUserList();
 		std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + " ";
@@ -532,7 +544,7 @@ void		CommandHandler::_handleINVITE(User& owner)
 	ch.invite(owner, nick);
 }
 
-void		CommandHandler::_numeric_reply(int val, User& owner, std::string extra) const
+void		CommandHandler::_numeric_reply(int val, User const &owner, std::string extra) const
 {
 	std::string msg = ":myIRCServer ";
 
@@ -566,10 +578,19 @@ void		CommandHandler::_numeric_reply(int val, User& owner, std::string extra) co
 		case 315: // RPL_ENDOFNAMES
 			msg += "315 " + owner.getNick() + " "  + extra + " :End of /WHO list";
 			break;
+		case 321: // RPL_LISTSTART 
+			msg += "321 " + owner.getNick() + " Channel :Users  Name";
+			break;
+		case 322: // RPL_LIST 
+			msg += "322 " + owner.getNick() + " "  + extra;
+			break;
+		case 323: // RPL_LISTEND 
+			msg += "323 " + owner.getNick() + " "  + extra + " :End of /LIST";
+			break;
 		case 324: // RPL_CHANNELMODEIS 
 			msg += "324 " + owner.getNick() + " "  + extra;
 			break;
-		case 329: // RPL_CHANNELMODEIS 
+		case 329: // RPL_CREATIONTIME 
 			msg += "329 " + owner.getNick() + " "  + extra;
 			break;
 		case 331: // RPL_NOTOPIC

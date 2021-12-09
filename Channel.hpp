@@ -52,7 +52,7 @@ class Channel
 
 		/*----METHODS----*/
 		
-		int					join_user(User &user, std::string key , char status);
+		void				join_user(User &user, std::string key , char status); //TODO: checks
 		bool				removeUser(User &user);
 		bool 				removeUser(std::string const & nick);
 		void				part_user(User &user);
@@ -61,19 +61,19 @@ class Channel
 		bool				isInChannel(std::string const & nick) const;
 		bool				addMode(User &owner, char m, char mode, std::string param = "");
 		void				kick(User &user, std::list<std::string> &users, std::string msg = "Because me stai sul cazzo");
-		bool				isOperator(User &user) const;
-		bool				isOperator(std::string &user) const;
+		bool				isOperator(User const &user) const;
+		bool				isOperator(std::string const &user) const;
 		bool				empty();
 		void				delMode(char mode);
-		//TODO:
+
 		void				invite(User &owner, std::string nick);
-		bool				isBanned(User &owner) const;
-		bool				canJoin(User &owner) const;
-		bool				canSendMsg(User &owner) const;
+		bool				isBanned(User const &owner) const;
+		bool				canJoin(User const &owner) const;
+		bool				canSendMsg(User const &owner) const;
 		bool				isFull() const;
-		bool				isInvited(User &owner) const;
-		bool				isInvited(std::string owner) const;
-		bool				isBanned(std::string owner) const;
+		bool				isInvited(User const &owner) const;
+		bool				isInvited(std::string const owner) const;
+		bool				isBanned(std::string const owner) const;
 
 		void				ban(User &owner, std::string nick);
 		void				exception(User &owner, std::string nick, char type);
@@ -102,9 +102,10 @@ class Channel
 
 
 		/*----GETTER----*/
+		size_t			 		getUserCount() const;
 		int						getLimit() const;
 		std::string const 		&getModes() const;
-		std::string 			getName() const;
+		std::string 			getName(bool ck = false) const;
 		std::string 			getKey() const;
 		std::string 			getTopic() const;
 		std::string 			getTopicTime() const;

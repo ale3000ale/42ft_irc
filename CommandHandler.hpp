@@ -43,7 +43,7 @@ class CommandHandler
 
 		void					_welcome_msg(User& target) const;
 	public:
-		void					_numeric_reply(int val, User& owner, std::string extra = "") const;
+		void					_numeric_reply(int val, User const &owner, std::string extra = "") const;
 };
 
 #endif
