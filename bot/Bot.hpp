@@ -32,13 +32,15 @@ class Bot
 
 		int			_register();
 		void		_load_insults(const char *file);
+		
 		int			_get_numeric(std::string buff) const;
 		std::string	_get_cmd(std::string buff) const;
 		std::string _get_sender(std::string buff) const;
-		void		_handle_cmd(std::string cmd) const;
-
+		std::string _get_text(std::string buff) const;
+		
 		void		_send_msg(std::string msg) const;
 		
+		void		_handle_cmd(std::string cmd) const;
 		void		_handleJOIN() const;
 		void		_handlePRIVMSG() const;
 		void		_handlePART() const;
