@@ -487,7 +487,7 @@ void				Channel::invite(User &owner, std::string nick)
 		return (_server->getHandler()._numeric_reply(482, owner, _name));
 	if (this->isInChannel(nick))
 		return (_server->getHandler()._numeric_reply(443, owner, nick + " "+ _name));
-	_invite.insert(nick);
+	_inviteList.insert(nick);
 	_server->getHandler()._numeric_reply(341, owner, nick + " "+ _name);
 	std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
 							" INVITE " + nick + " :"+ _name + "\r\n";
@@ -498,13 +498,13 @@ void				Channel::invite(User &owner, std::string nick)
 
 bool				Channel::isInvited(std::string owner) const
 {
-	return (_invite.find(owner) != _invite.end() ||
+	return (_inviteList.find(owner) != _inviteList.end() ||
 			_excInviteList.find(owner) != _excInviteList.end());
 }
 
 bool				Channel::isInvited(User const &owner) const
 {
-	return (_invite.find(owner.getNick()) != _invite.end() ||
+	return (_inviteList.find(owner.getNick()) != _inviteList.end() ||
 			_excInviteList.find(owner.getNick()) != _excInviteList.end());
 }
 
@@ -529,7 +529,7 @@ bool				Channel::canJoin(User const &owner) const
 		std::cout << "User: " + owner.getNick() + ":" + owner.getUsername() + " is already in the channel!\n";
 		return (false);
 	}
-	if (_modes.find('i') != std::string::npos && this->isInvited(owner))
+	if (_modes.find('i') != std::string::npos && !this->isInvited(owner))
 	{
 		_server->getHandler()._numeric_reply(473, owner, _name);
 		return false;
@@ -539,7 +539,7 @@ bool				Channel::canJoin(User const &owner) const
 		_server->getHandler()._numeric_reply(471, owner, _name);
 		return false;
 	}
-	if (this->isBanned(owner) && (_invite.find(owner.getNick()) == _invite.end()))
+	if (this->isBanned(owner) && (_inviteList.find(owner.getNick()) == _inviteList.end()))
 	{
 		_server->getHandler()._numeric_reply(474, owner, _name);
 		return false;
@@ -560,7 +560,7 @@ bool				Channel::canSendMsg(User const &owner) const
 		_server->getHandler()._numeric_reply(474, owner, _name);
 		return false;
 	}
-	if (_modes.find('m') != std::string::npos && this->isOperator(owner))
+	if (_modes.find('m') != std::string::npos && !this->isOperator(owner))
 	{
 		_server->getHandler()._numeric_reply(482, owner, _name);
 		return false;
@@ -615,6 +615,7 @@ void			Channel::join_user(User &user, std::string key , char status = 0)
 	if (key == _key)
 	{
 		user.addChannel(_name);
+		_inviteList.erase(user.getNick());
 		_users.push_back(std::pair<char,User *>(status, &user));
 		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + "\r\n";
 		this->sendAll(msg);

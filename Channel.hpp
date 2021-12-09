@@ -38,7 +38,6 @@ class Channel
 		std::set<std::string>  _excBanList;
 		std::set<std::string>  _excInviteList;
 		std::set<std::string>  _inviteList;
-		std::set<std::string>  _invite;
 		std::vector<std::pair<char,User *> > _users;
 
 	public:
