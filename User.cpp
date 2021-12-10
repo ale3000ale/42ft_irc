@@ -20,8 +20,7 @@ void		User::addChannel(std::string name)
 		_channels.push_back(name);
 }
 
-// TODO: goes in segfault if channel operator quits
-void		User::removeChannl(std::string name)
+void		User::removeChannel(std::string name)
 {
 	_channels.erase(std::find(_channels.begin(),_channels.end(), name));
 }

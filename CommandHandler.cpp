@@ -19,13 +19,13 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 		if (cmd_line[0] == ':')
 		{
 			cmd_line.erase(0, 1);
-			if (cmd_line.empty())	// TODO: check if this is correct
+			if (cmd_line.empty())
 			{
 				this->_params.push_back("");
 				break ;
 			}
 			this->_params.push_back(cmd_line);
-			cmd_line.erase(0, -1);
+			cmd_line.erase(0);
 		}
 		else
 		{
@@ -36,14 +36,14 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 	}
 }
 
-void CommandHandler::handle(std::string cmd_line, User& owner)
+void CommandHandler::handle(std::string cmd_line, User& owner) // TODO: commands and nicks need to be compared in uppercase
 {
 	std::cout<<"command: "<<cmd_line<<std::endl;
 	_parse_cmd(cmd_line);
 	if (this->_command.empty())
 		return ;
 	if (!owner.is_passed() && this->_command != "PASS")
-		return ; // TODO: send numeric reply
+		return ;
 	else if (owner.is_passed() && !owner.is_registered() && this->_command != "NICK" && this->_command != "USER")
 		return _numeric_reply(451, owner, this->_command); // ERR_NOTREGISTERED
 	// sarebbe figo avere una mappa chiave = comando(es PASS) valore = puntatore funzione corrispondente
@@ -117,19 +117,8 @@ void CommandHandler::_handleNICK(User& owner)
 		_welcome_msg(owner);
 }
 
-void breakpoint() {
-	int i=0;
-	i = i+2;
-}
-
 void CommandHandler::_handleUSER(User& owner)
 {
-	static int i;
-	i++;
-	if (i==3)
-		breakpoint();
-	/*for (std::list<std::string>::iterator i =_params.begin(); i != _params.cend() ; i++)
-		std::cout<<*i<<" --- ";*/
 	if (this->_params.size() != 4)
 		return _numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
 	if (owner.is_registered())
@@ -144,11 +133,22 @@ void CommandHandler::_handleUSER(User& owner)
 		_welcome_msg(owner);
 }
 
+void CommandHandler::_handleMOTD(User& owner)
+{
+	if (this->_params.size() && this->_params.front() != "myIRCServer")
+		return _numeric_reply(402, owner, this->_params.front()); // ERR_NOSUCHSERVER
+	std::vector<std::string> motd = this->_server.getMotd();
+	if (!motd.size())
+		return _numeric_reply(422, owner); // ERR_NOMOTD
+	// TODO:
+	std::string msg = ":myIRCServer PONG myIRCServer :" + this->_params.front() + "\r\n";
+	this->_server.send_msg(msg, owner);
+}
+
 void CommandHandler::_handlePING(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
 		return _numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
-	//std::cout<<"PONG TEST: "<<this->_params.front()<<std::endl;
 	std::string msg = ":myIRCServer PONG myIRCServer :" + this->_params.front() + "\r\n";
 	this->_server.send_msg(msg, owner);
 }
@@ -228,20 +228,14 @@ void CommandHandler::_handleJOIN(User& owner)
 	while(!names.empty())
 	{
 		char stat  = 0;
-		std::cout << "EXIST?: "<< std::endl;
 		if (!_server.exist_channel(names.front()))
 		{
-			std::cout << "CREATED"<< std::endl;
 			Channel ch(names.front(), keys.front(), _server);
 			_server.add_channel(ch);
-			std::cout << "ADDED"<< std::endl;
 			stat = '@';
 		}
-		//std::cout<<"there are"<<_server.getchannelList().size()<<"existing chans\n";
-
 		Channel &chan = _server.get_channel(names.front());
 		std::cout << "JOINING "<< chan.getName() << " key " << chan.getKey() << std::endl;
-		//if (keys.empty())
 		chan.join_user(owner, keys.front(), stat);
 		if (!keys.empty())
 			keys.pop_front();
@@ -253,7 +247,6 @@ void CommandHandler::_handlePART(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
 		return (_numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
-	// TODO: codice molot simile in handlePRIVMSG, creare funzione
 	std::string targets = this->_params.front();
 	std::string reason;
 	if (this->_params.size() > 1 &&  this->_params.front() != "")
@@ -311,34 +304,34 @@ void CommandHandler::_handleWHO(User& owner) const
 	Channel ch;
 	if (_params.empty())
 	{
-		//std::cout << "WHO EMPTY\n"; 
 		for(size_t i =0 ; i !=us.size(); i++)
 		{
-			/*std::cout << "WHO EMPTY " +  us[i].getNick() + " " << i << std::endl; */
 			if (!((us[i]->commonChannel(owner.getChannels())) || us[i]->hasMode('i')) || *us[i] == owner)
-			{		
-				//std::cout << "WHO EMPTY no match "<< i << std::endl;														// TODO: server.host server.name  					wtf is H/G
+			{														
 				msg = (us[i]->getChannels().empty() ? "* " : us[i]->getChannels().back()+ " ") + us[i]->getUsername() + " " + us[i]->getHost() + " myIRCServer " + us[i]->getNick() +
 				 " H :0 "  + us[i]->getRealname();
 				_numeric_reply(352, owner, msg);
 			}
-			//std::cout << "WHO EMPTY SEND " +  us[i].getNick() + " " << i << std::endl;
 		}
-		_numeric_reply(315, owner,"*");
+		_numeric_reply(315, owner, "*");
 	}
 	else if(_server.exist_channel(_params.front()))
 	{
 		ch = _server.get_channel(_params.front());
 		const Channel::user_list_type &users = ch.getUserList();
+		std::string header = ch.getName(true) + " ";
 		for (size_t i =0 ;i != users.size(); i++)
 		{
-			//std::cout << "WHO CHAN " +  ch.getName() + " " << i << std::endl; 
+			// TODO: alex vedi un po'se va bene
+			msg = header + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() + " H";
 			if (users[i].first)
-				msg = ch.getName(true) + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
-				" H" + users[i].first + " :0 " + users[i].second->getRealname();
+				msg += users[i].first;
+			msg += " :0 " + users[i].second->getRealname();
+			/*msg = header + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
+				" H"; + users[i].first + " :0 " + users[i].second->getRealname();
 			else
 				msg = ch.getName(true) + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
-				" H :0 " + users[i].second->getRealname();
+				" H :0 " + users[i].second->getRealname();*/
 			_numeric_reply(352, owner, msg);
 		}
 		_numeric_reply(315, owner, ch.getName(true));
@@ -388,10 +381,7 @@ void	CommandHandler::_handleKICK(User &owner)
 		}
 		else
 			_numeric_reply(403, owner, channels.front());
-		
 	}
-	
-
 }
 
 
@@ -491,7 +481,6 @@ void	CommandHandler::_handleTOPIC(User& owner)
 
 void	CommandHandler::_handleLIST(User& owner)
 {
-	//thalassa.designations.org 322 amarcell #ao 1 :[+nt] bella zi che dici !!!!!!!
 	_numeric_reply(321,owner);
 	std::string msg = "";
 	const Server::channels_type		&chs = _server.getchannelList();
@@ -618,7 +607,7 @@ void		CommandHandler::_numeric_reply(int val, User const &owner, std::string ext
 			msg += "349 " + owner.getNick() + " " + extra  + " :End of channel exception list.";
 			break;
 		case 352: // RPL_WHOREPLY
-			msg += "352 " + owner.getNick() + " " + extra ; //TODO: \<H|G>[*][@|+] :<hopcount> <real name>"     capire che so
+			msg += "352 " + owner.getNick() + " " + extra ;
 			break;
 		case 353: // RPL_NAMREPLY TODO: Remove  _server.get_channel(extra).getStrUsers(); and use only extra
 			msg += "353 " + owner.getNick() + " " + extra;
@@ -635,6 +624,9 @@ void		CommandHandler::_numeric_reply(int val, User const &owner, std::string ext
 		case 401: // ERR_NOSUCHNICK
 			msg += "401 " + owner.getNick() + " " + extra + " :No such nick/channel";
 			break;
+		case 402: // ERR_NOSUCHSERVER
+			msg += "402 " + owner.getNick() + " " + extra + " :No such server";
+			break;
 		case 403: // ERR_NOSUCHCHANNEL
 			msg += "403 " + owner.getNick() + " " + extra + " :No such channel";
 			break;
@@ -649,6 +641,9 @@ void		CommandHandler::_numeric_reply(int val, User const &owner, std::string ext
 			break;
 		case 421: // ERR_UNKNOWNCOMMAND 
 			msg += "421 " + owner.getNick() + " " + extra + " :Unknown command";
+			break;
+		case 422: // ERR_NOMOTD
+			msg += "422 " + owner.getNick() + " :MOTD File is missing";
 			break;
 		case 431: // ERR_NONICKNAMEGIVEN
 			msg += "431 " + owner.getNick() + " :No nickname given";
@@ -708,7 +703,6 @@ void		CommandHandler::_numeric_reply(int val, User const &owner, std::string ext
 			break;
 	}
 	msg += "\r\n";
-	//std::cout<<"MSG:" + msg;
 	this->_server.send_msg(msg, owner);
 }
 

@@ -26,6 +26,7 @@ class CommandHandler
 		void					_handlePASS(User &owner);
 		void					_handleNICK(User& owner);
 		void					_handleUSER(User& owner);
+		void					_handleMOTD(User& owner);
 		void					_handlePING(User& owner);
 		void					_handleJOIN(User &owner);
 		void					_handlePART(User &owner);

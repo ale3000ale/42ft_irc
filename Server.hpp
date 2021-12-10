@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <cstdio>
+#include <fstream>
 
 #include "User.hpp"
 #include "Channel.hpp"
@@ -23,6 +24,7 @@
 #define BACKLOG 10 // number of connections allowed on the incoming queue
 #define UMODES std::string("oiws") // available user _modes
 #define CMODES std::string("obtkmlvsn") // available channel _modes
+#define MOTD_PATH "./motd.txt"
 
 class Server
 {
@@ -31,7 +33,7 @@ class Server
 		typedef  std::map<std::string, Channel>::const_iterator 	channels_citerator;
 	public:
 		Server(std::string port, std::string password);
-		~Server();		//TODO: delete all USER
+		~Server();
 
 		void 			run();
 		bool 			checkPass(std::string &pass);
@@ -50,9 +52,11 @@ class Server
 		std::string		getDateTimeCreated() const;
 		void			removeChannel(std::string name);
 		const std::map<std::string, Channel> &getchannelList() const;
-		
-		
+		std::vector<std::string> const & getMotd() const;
+
 	private:
+		typedef std::map<std::string, Channel>::const_iterator	_chan_it;
+
 		std::string						_dateTimeCreated;
 		std::string						_port;
 		std::string						_password;
@@ -61,13 +65,13 @@ class Server
 		std::vector<User*>				_users;
 		std::map<std::string, Channel>	_channels;
 		CommandHandler					_handler;
+		std::vector<std::string>		_motd;
 
-		typedef std::map<std::string, Channel>::const_iterator	_chan_it;
-
-		void						_addUser();
-		void 						_deleteUser(int index);
-		void						_addFd(int new_fd);
-		void 						_exec_cmd(User& executor);
+		void							_load_motd(const char *file);
+		void							_addUser();
+		void 							_deleteUser(int index);
+		void							_addFd(int new_fd);
+		void 							_exec_cmd(User& executor);
 };
 
 

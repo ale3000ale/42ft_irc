@@ -639,7 +639,7 @@ void	Channel::part_user(User &user)
 		if (*(_users[i].second) == user)
 			break ;
 	}
-	user.removeChannl(_name);
+	user.removeChannel(_name);
 	this->_users.erase(this->_users.begin() + i);
 }
 
@@ -699,7 +699,7 @@ bool 			Channel::removeUser(std::string const & nick)
 		if ((*(_users[i].second)).getNick() == nick)
 			break ;
 	}
-	(*_users[i].second).removeChannl(_name);
+	(*_users[i].second).removeChannel(_name);
 	this->_users.erase(this->_users.begin() + i);
 	return (true);
 }

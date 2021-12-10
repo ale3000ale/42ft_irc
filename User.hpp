@@ -21,7 +21,7 @@ class User
 		void		set_registered();
 
 		void		addChannel(std::string name);
-		void		removeChannl(std::string name);
+		void		removeChannel(std::string name);
 		std::string const &	getHost() const;
 		int	getSocket() const;
 		std::string const &	getNick() const;

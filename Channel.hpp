@@ -31,7 +31,6 @@ class Channel
 		std::time_t		_topicTime;
 		std::time_t		_creationTime;
 		Server			*_server;
-		//User 			*_founder;
 		std::string		_modes;
 		int 			_limit;
 		std::set<std::string>  _banList;

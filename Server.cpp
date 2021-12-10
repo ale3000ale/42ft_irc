@@ -35,11 +35,15 @@ Server::Server(std::string port, std::string password) : _port(port), _password(
 	}
 
 	freeaddrinfo(ai); // All done with this
+
+	_load_motd(MOTD_PATH);
 }
 
 Server::~Server()
 {
 	close(this->_socket_fd);
+	for (u_int i = 0; i < this->_users.size(); i++)
+		this->_deleteUser(i);
 }
 
 void Server::run()
@@ -71,27 +75,49 @@ void Server::run()
 					char buf[512];
 					memset(buf, 0, sizeof(buf));
 					int nbytes = recv(this->_pfds[i].fd, buf, sizeof(buf), 0);
-					if (nbytes <= 0)
+					if (nbytes <= 0) // Got error or connection closed by client
 					{
-						// TODO: if (nbytes != 0) ERROR
-						// Got error or connection closed by client
-						_deleteUser(i); // check if doing this i miss one fd
+						if (nbytes) // if nbytes != 0 an error occured
+							 perror("recv");
+						else
+							_deleteUser(i);
 					}
 					else
 					{
 						User &curr = *this->_users[i - 1];
 						curr.buffer() += buf;
-						//std::cout<<curr.buffer()<<" size:"<<curr.buffer().size()<<"\n";
 						if (curr.buffer().find("\r\n") != std::string::npos)
-						{
 							_exec_cmd(curr);
-							//std::cout<<curr.buffer();
-						}
 					}
 				}
 			}
 		}
 	}
+}
+
+void	Server::_load_motd(const char *file)
+{
+	std::fstream my_file;
+	my_file.open(file, std::ios::in);
+	if (!my_file)
+		return ;
+	
+	my_file >> std::noskipws;
+
+	std::string line;
+	char ch;
+
+	do {
+		my_file >> ch;
+		if (ch == '\n')
+		{
+			this->_motd.push_back(line);
+			line.clear();
+		}
+		else
+			line += ch;
+	} while (!my_file.eof());
+	my_file.close();
 }
 
 void Server::_addUser()
@@ -101,7 +127,6 @@ void Server::_addUser()
 	int new_fd;
 	if ((new_fd = accept(this->_socket_fd, (struct sockaddr *)&clientaddr, &addrlen)) < 0)
 		return (perror("accept"));
-	std::cout<<new_fd<<"\n";
 	_addFd(new_fd);
 	char remoteIP[INET6_ADDRSTRLEN];
 	struct sockaddr *casted_addr = (struct sockaddr*)&clientaddr;
@@ -110,11 +135,6 @@ void Server::_addUser()
     else
 		inet_ntop(AF_INET6, &(((struct sockaddr_in6*)casted_addr)->sin6_addr), remoteIP, INET6_ADDRSTRLEN);
 	this->_users.push_back(new User(new_fd, remoteIP));
-	if (this->exist_channel("#insultaBOT"))
-	{
-		std::cout << "USERS IN CHANNEL AT LOGIN "<<_channels["#insultaBOT"].getStrUsers() << "FINISH LOGIN " <<"\n";
-
-	}
 }
 
 void Server::_deleteUser(int index)
@@ -157,18 +177,13 @@ std::vector<User*> const & Server::getUserList() const
 void Server::_exec_cmd(User& executor)
 {
 	std::string& buffer = executor.buffer();
-	//std::cout <<"1: "<<executor.buffer()<<"\n";
 	int pos = buffer.find("\r\n");
 	do
 	{
-		//std::cout <<"2: "<<buffer.substr(0, pos)<<"\n";
 		this->_handler.handle(buffer.substr(0, pos), executor);
 		buffer.erase(0, pos + 2);
-		//std::cout <<"3: "<<buffer<<"\n";
 		pos = buffer.find("\r\n");
 	} while (pos != -1);
-	//std::cout <<"4: "<<executor.buffer()<<"\n";
-	//executor.buffer().clear();
 }
 
 bool	Server::exist_channel(std::string name) const
@@ -287,13 +302,17 @@ User const 		&Server::getUser(std::string user) const
 std::string		Server::getDateTimeCreated() const
 { return (this->_dateTimeCreated); }
 
-
 void			Server::removeChannel(std::string name)
 {
 	_channels.erase(name);
 }
 
-const std::map<std::string, Channel> &Server::getchannelList() const
+std::map<std::string, Channel> const &Server::getchannelList() const
 {
-	return _channels;
+	return this->_channels;
+}
+
+std::vector<std::string> const &Server::getMotd() const
+{
+	return this->_motd;
 }
