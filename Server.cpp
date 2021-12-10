@@ -2,8 +2,6 @@
 #include "Server.hpp"
 #include "Channel.hpp"
 
-#include <iostream>
-
 Server::Server(std::string port, std::string password) : _port(port), _password(password), _handler(*this)
 {
     int yes=1;        // For setsockopt() SO_REUSEADDR, below
@@ -149,7 +147,7 @@ void Server::deleteUser(std::string nick)
 {
 	for (u_int i = 0; i < this->_users.size(); i++)
 	{
-		if (this->_users[i]->getNick() == nick)
+		if (*this->_users[i] == nick)
 			return (_deleteUser(i + 1));
 	}
 }
@@ -236,7 +234,7 @@ int		Server::send_msg(std::string& msg, std::string target) const
 	
 	while (i < _users.size())
 	{
-		if (_users[i]->getNick() == target)
+		if (*_users[i] == target)
 		{
 			if (_users[i]->isAway())
 				return (301);
@@ -257,8 +255,8 @@ CommandHandler	Server::getHandler() const
 
 void			Server::sendAllChans(std::string msg, User& sender)
 {
-	_chan_it it = this->_channels.cbegin();
-	_chan_it tmp;
+	chan_it it = this->_channels.cbegin();
+	chan_it tmp;
 	while (it != this->_channels.cend())
 	{
 		std::string ch_name = (*it).first;
@@ -282,7 +280,7 @@ bool			Server::exist_user(std::string name) const
 {
 	size_t i = 0;
 	for (;i< _users.size(); i++)
-		if (_users[i]->getNick() == name)
+		if (*_users[i] == name)
 			return true;
 	return false;
 
@@ -293,7 +291,7 @@ User const 		&Server::getUser(std::string user) const
 	size_t i  = 0;
 	for (; i < _users.size(); i++)
 	{
-		if (_users[i]->getNick() == user)
+		if (*_users[i] == user)
 			return *_users[i];
 	}
 	return *_users[i];

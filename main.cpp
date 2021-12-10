@@ -1,20 +1,21 @@
 
-
 #include <iostream>
 #include "Server.hpp"
 
 int main(int ac, char *av[])
 {
 	Server *server;
-	// TODO: sistemare argomenti accettabili
-	if (ac != 3)
+	if (ac != 3 && ac != 4)
 	{
-		std::cerr<<"usage: "<<av[0]<<" port password"<<std::endl;
+		std::cerr<<"usage: "<<av[0]<<" [host:port_network:password_network] port password"<<std::endl;
 		return (1);
 	}
 	try
 	{
-		server = new Server(av[1], av[2]);
+		if (ac == 3)
+			server = new Server(av[1], av[2]);
+		else
+			server = new Server(av[2], av[3]);
 	}
 	catch(const std::exception& e)
 	{

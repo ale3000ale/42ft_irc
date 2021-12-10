@@ -41,6 +41,7 @@ class User
 		void				delMode(char mode);
 
 		bool				operator==(User const & other) const;
+		bool				operator==(std::string const & other) const;
 	private:
 		
 		int			_socket_fd;
@@ -57,5 +58,6 @@ class User
 		std::vector<std::string> _channels;
 };
 
+std::string	toUpper(std::string const & str);
 
 #endif

@@ -1,26 +1,25 @@
 
 #include "User.hpp"
 
-
 User::User(int fd, std::string host) : _socket_fd(fd), _host(host), _pass_set(false), _registered(false), _away(false), _modes("+") {}
 
 User::~User() {};
 
-std::string& User::buffer() { return (this->_buffer); }
+std::string& 		User::buffer() { return (this->_buffer); }
 
-bool		User::is_passed() const { return(this->_pass_set); }
-bool		User::is_registered() const { return(this->_registered); };
+bool				User::is_passed() const { return(this->_pass_set); }
+bool				User::is_registered() const { return(this->_registered); };
 
-void		User::set_passed() { this->_pass_set= true; }
-void		User::set_registered() { this->_registered = true; }
+void				User::set_passed() { this->_pass_set= true; }
+void				User::set_registered() { this->_registered = true; }
 
-void		User::addChannel(std::string name)
+void				User::addChannel(std::string name)
 {
 	if (std::find(_channels.begin(),_channels.end(), name) == _channels.end())
 		_channels.push_back(name);
 }
 
-void		User::removeChannel(std::string name)
+void				User::removeChannel(std::string name)
 {
 	_channels.erase(std::find(_channels.begin(),_channels.end(), name));
 }
@@ -77,8 +76,19 @@ void				User::setAway(bool away, std::string msg)
 std::string const & User::getAwayMsg() const
 { return (this->_away_msg); }
 
+std::string	toUpper(std::string const & str)
+{
+	std::string result;
+	for (u_int i=0; i<str.length(); i++)
+		result += std::toupper(str[i]);
+	return (result);
+}
+
+bool				User::operator==(std::string const & nick) const
+{ return (toUpper(this->_nickname) == toUpper(nick)); }
+
 bool				User::operator==(User const & other) const
-{ return (this->_nickname == other._nickname); }
+{ return (*this == other._nickname); }
 
 std::string const & User::getModes() const
 { return (this->_modes); }

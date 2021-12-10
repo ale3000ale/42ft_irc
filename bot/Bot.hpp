@@ -12,7 +12,7 @@
 #include <vector>
 #include <fstream>
 
-#define INSULTS_PATH "./bot/insulti.txt"
+#define INSULTS_PATH "./bot/.insulti.txt"
 
 class Bot
 {

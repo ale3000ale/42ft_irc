@@ -15,25 +15,26 @@
 #include <fcntl.h>
 #include <cstdio>
 #include <fstream>
+#include <map>
 
 #include "User.hpp"
 #include "Channel.hpp"
 #include "CommandHandler.hpp"
-#include <map>
 
 #define BACKLOG 10 // number of connections allowed on the incoming queue
 #define UMODES std::string("oiws") // available user _modes
 #define CMODES std::string("obtkmlvsn") // available channel _modes
-#define MOTD_PATH "./motd.txt"
+#define MOTD_PATH "./.motd.txt"
 
 class Server
 {
 	public:
-		typedef  std::map<std::string, Channel> 					channels_type;
-		typedef  std::map<std::string, Channel>::const_iterator 	channels_citerator;
-	public:
+		
 		Server(std::string port, std::string password);
 		~Server();
+
+		typedef  std::map<std::string, Channel> 				chan_type;
+		typedef std::map<std::string, Channel>::const_iterator	chan_it;
 
 		void 			run();
 		bool 			checkPass(std::string &pass);
@@ -55,8 +56,7 @@ class Server
 		std::vector<std::string> const & getMotd() const;
 
 	private:
-		typedef std::map<std::string, Channel>::const_iterator	_chan_it;
-
+		
 		std::string						_dateTimeCreated;
 		std::string						_port;
 		std::string						_password;

@@ -5,12 +5,10 @@
 #include <stdexcept>
 #include <vector>
 #include <iostream>
-#include "User.hpp"
 #include <list>
 #include <set>
 
-#define LOCAL		'&'
-
+#include "User.hpp"
 class Server;
 
 class Channel
@@ -45,12 +43,9 @@ class Channel
 		Channel(std::string name, std::string key, Server &server);
 		Channel(Channel const & channel);
 		~Channel();
-
-		/* Channel &		operator=( Channel const & rhs ); */
-
 		/*----METHODS----*/
 		
-		void				join_user(User &user, std::string key , char status); //TODO: checks
+		void				join_user(User &user, std::string key , char status);
 		bool				removeUser(User &user);
 		bool 				removeUser(std::string const & nick);
 		void				part_user(User &user);
@@ -125,6 +120,5 @@ class Channel
 		};
 };
 
-//std::ostream &			operator<<( std::ostream & o, Channel const & i );
 User 					*join_channel(std::string arg);
 #endif /* ********************************************************* CHANNEL_H */
