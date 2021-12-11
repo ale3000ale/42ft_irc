@@ -2,17 +2,19 @@
 #ifndef BOT_HPP
 # define BOT_HPP
 
-#include <string>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <cerrno>
-#include <iostream>
-#include <vector>
-#include <fstream>
+# include <string>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
+# include <unistd.h>
+# include <cerrno>
+# include <iostream>
+# include <vector>
+# include <fstream>
 
-#define INSULTS_PATH "./bot/.insulti.txt"
+# define INSULTS_PATH "./bot/.insulti.txt"
+# define BOT_NAME std::string("insultaBOT")
+# define CRLF std::string("\r\n")
 
 class Bot
 {

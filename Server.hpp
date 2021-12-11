@@ -2,29 +2,31 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-#include <string>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <stdexcept>
-#include <cerrno>
-#include <unistd.h>
-#include <vector>
-#include <poll.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <cstdio>
-#include <fstream>
-#include <map>
+# include <string>
+# include <netdb.h>
+# include <sys/socket.h>
+# include <sys/types.h>
+# include <stdexcept>
+# include <cerrno>
+# include <unistd.h>
+# include <vector>
+# include <poll.h>
+# include <arpa/inet.h>
+# include <fcntl.h>
+# include <cstdio>
+# include <fstream>
+# include <map>
 
-#include "User.hpp"
-#include "Channel.hpp"
-#include "CommandHandler.hpp"
+# include "User.hpp"
+# include "Channel.hpp"
+# include "CommandHandler.hpp"
+# include "numerics.h"
 
-#define BACKLOG 10 // number of connections allowed on the incoming queue
-#define UMODES std::string("oiws") // available user _modes
-#define CMODES std::string("obtkmlvsn") // available channel _modes
-#define MOTD_PATH "./.motd.txt"
+# define BACKLOG 10 // number of connections allowed on the incoming queue
+# define UMODES std::string("oiws") // available user _modes
+# define CMODES std::string("obtkmlvsn") // available channel _modes
+# define MOTD_PATH "./.motd.txt"
+# define SERV_NAME std::string("myIRCServer")
 
 class Server
 {

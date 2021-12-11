@@ -1,14 +1,15 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-#include <string>
-#include <stdexcept>
-#include <vector>
-#include <iostream>
-#include <list>
-#include <set>
+# include <string>
+# include <stdexcept>
+# include <vector>
+# include <iostream>
+# include <list>
+# include <set>
 
 #include "User.hpp"
+
 class Server;
 
 class Channel

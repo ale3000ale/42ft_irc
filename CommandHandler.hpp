@@ -1,11 +1,11 @@
 #ifndef COMMAND_HPP
 # define COMMAND_HPP
 
-#include <string>
-#include <list>
-#include <map>
+# include <string>
+# include <list>
+# include <map>
 
-#include "User.hpp"
+# include "User.hpp"
 
 class Server;
 

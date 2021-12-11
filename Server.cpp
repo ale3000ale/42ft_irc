@@ -84,7 +84,7 @@ void Server::run()
 					{
 						User &curr = *this->_users[i - 1];
 						curr.buffer() += buf;
-						if (curr.buffer().find("\r\n") != std::string::npos)
+						if (curr.buffer().find(CRLF) != std::string::npos)
 							_exec_cmd(curr);
 					}
 				}
@@ -175,12 +175,12 @@ std::vector<User*> const & Server::getUserList() const
 void Server::_exec_cmd(User& executor)
 {
 	std::string& buffer = executor.buffer();
-	int pos = buffer.find("\r\n");
+	int pos = buffer.find(CRLF);
 	do
 	{
 		this->_handler.handle(buffer.substr(0, pos), executor);
 		buffer.erase(0, pos + 2);
-		pos = buffer.find("\r\n");
+		pos = buffer.find(CRLF);
 	} while (pos != -1);
 }
 

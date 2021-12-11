@@ -84,13 +84,13 @@ int	Bot::_register()
 	std::string msg;
 	int nbytes;
 	sleep(1);
-	msg = "PASS " + this->_password + "\r\n";
+	msg = "PASS " + this->_password + CRLF;
 	_send_msg(msg);
-	msg = "NICK insultaBOT\r\n";
+	msg = "NICK "+ BOT_NAME +CRLF;
 	_send_msg(msg);
-	msg = "USER bot_user 0 * :insulta BOT\r\n";
+	msg = "USER bot_user 0 * :insulta BOT" + CRLF;
 	_send_msg(msg);
-	msg = "JOIN #insultaBOT\r\n";
+	msg = "JOIN #" + BOT_NAME + CRLF;
 	_send_msg(msg);
 	memset(this->_buff, 0, sizeof(this->_buff));
 	nbytes = recv(this->_socket_fd, this->_buff, sizeof(this->_buff), 0);
@@ -109,12 +109,12 @@ void Bot::_send_msg(std::string msg) const
 void	Bot::_handleJOIN() const
 {
 	std::string sender = _get_sender(this->_buff);
-	if (sender == "insultaBOT")
+	if (sender == BOT_NAME)
 		return ;
-	std::string header = "PRIVMSG #insultaBOT :";
-	std::string msg = header + sender + " é appena arrivato, SPERIAMO NON SIA DA ‘A LAZZIO\r\n";
+	std::string header = "PRIVMSG #" + BOT_NAME + " :";
+	std::string msg = header + sender + " é appena arrivato, SPERIAMO NON SIA DA ‘A LAZZIO" + CRLF;
 	_send_msg(msg);
-	msg = header + "** comandi disponibili ** INSULTAMI / INSULTA <NAME> / COMANDI\r\n";
+	msg = header + "** comandi disponibili ** INSULTAMI / INSULTA <NAME> / COMANDI" + CRLF;
 	_send_msg(msg);
 }
 
@@ -122,16 +122,16 @@ void	Bot::_handlePRIVMSG() const
 {
 	std::string text = _get_text(this->_buff);
 	srand(time(nullptr));
-	std::string msg = "PRIVMSG #insultaBOT :";
-	if (text == ":COMANDI\r\n" || text.substr(0, text.find(" ")) == ":COMANDI")
-		msg += "** comandi disponibili ** INSULTAMI / INSULTA <NAME> / COMANDI\r\n";
+	std::string msg = "PRIVMSG #" + BOT_NAME + " :";
+	if (text == ":COMANDI" + CRLF || text.substr(0, text.find(" ")) == ":COMANDI")
+		msg += "** comandi disponibili ** INSULTAMI / INSULTA <NAME> / COMANDI" + CRLF;
 	else
 	{
 		std::string insult = this->_insults[rand() % this->_insults.size()];
 		std::string sender = _get_sender(this->_buff);
-		if (text == ":INSULTAMI\r\n" || text.substr(0, text.find(" ")) == ":INSULTAMI")
-			msg += sender + ", " + insult + "\r\n";
-		else if (text == ":INSULTA\r\n" || text.substr(0, text.find(" ")) == ":INSULTA")
+		if (text == ":INSULTAMI" + CRLF || text.substr(0, text.find(" ")) == ":INSULTAMI")
+			msg += sender + ", " + insult + CRLF;
+		else if (text == ":INSULTA" + CRLF || text.substr(0, text.find(" ")) == ":INSULTA")
 		{
 			int pos = std::string(text).find(" ");
 			if (pos != -1)
@@ -140,19 +140,19 @@ void	Bot::_handlePRIVMSG() const
 				sender.pop_back();
 				sender.pop_back(); // deleting \r\n
 			}
-			msg += sender + ", " + insult + "\r\n";
+			msg += sender + ", " + insult + CRLF;
 			std::cout<<"TEST: " + msg;
 		}
 	}
-	if (msg != "PRIVMSG #insultaBOT :")
+	if (msg != ("PRIVMSG #" + BOT_NAME + " :"))
 		_send_msg(msg);
 }
 
 void	Bot::_handlePART() const
 {
-	std::string msg = "PRIVMSG #insultaBOT :";
+	std::string msg = "PRIVMSG #" + BOT_NAME + " :";
 	std::string sender = _get_sender(this->_buff);
-	msg += sender + " s'é tirato, E 'STI CAZZI\r\n";
+	msg += sender + " s'é tirato, E 'STI CAZZI" + CRLF;
 	_send_msg(msg);
 }
 

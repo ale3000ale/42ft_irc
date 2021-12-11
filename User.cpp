@@ -79,7 +79,7 @@ std::string const & User::getAwayMsg() const
 std::string	toUpper(std::string const & str)
 {
 	std::string result;
-	for (u_int i=0; i<str.length(); i++)
+	for (unsigned int i=0; i<str.length(); i++)
 		result += std::toupper(str[i]);
 	return (result);
 }

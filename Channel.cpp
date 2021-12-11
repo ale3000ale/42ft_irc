@@ -1,3 +1,4 @@
+
 #include "Channel.hpp"
 #include "Server.hpp"
 
@@ -52,14 +53,14 @@ void				Channel::ban(User &owner, std::string nick)
 	if (!this->isOperator(owner))
 	{
 		std::cout << "NOT OPERATOR\n";
-		return (_server->getHandler().numeric_reply(482, owner, _name));
+		return (_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name));
 	}
 	if ((_banList.find(nick) != _banList.end()))
 		return;
 	_banList.insert(nick);
 	std::cout << "NON TROVATO NELLA BAN LIST\n";
 	std::string msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-						" MODE " + _name + " +b :" + nick + "!*@*" + "\r\n";
+						" MODE " + _name + " +b :" + nick + "!*@*" + CRLF;
 	if (this->_modes.find('b') == std::string::npos)
 		_modes += "b";
 	this->sendAll(msg);
@@ -68,12 +69,12 @@ void				Channel::ban(User &owner, std::string nick)
 void				Channel::unBan(User &owner, std::string nick)
 {
 	if (!this->isOperator(owner))
-		return (_server->getHandler().numeric_reply(482, owner, _name));
+		return (_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name));
 	if (_banList.find(nick) == _banList.end())
 		return;
 	_banList.erase(nick);
 	std::string msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-						" MODE " + _name + " -b :" + nick + "!*@*" + "\r\n";
+						" MODE " + _name + " -b :" + nick + "!*@*" + CRLF;
 	this->sendAll(msg);
 	if (_banList.empty())
 		this->delMode('b');
@@ -82,7 +83,7 @@ void				Channel::exception(User &owner, std::string nick, char type)
 {
 	std::string msg;
 	if (!this->isOperator(owner))
-		return (_server->getHandler().numeric_reply(482, owner, _name));
+		return (_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name));
 	switch (type)
 	{
 	case 'I':
@@ -92,7 +93,7 @@ void				Channel::exception(User &owner, std::string nick, char type)
 			_excInviteList.insert(nick);
 			std::cout << "inserted IIIIII\n";
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + " +I :" + nick + "!*@*" + "\r\n";
+								" MODE " + _name + " +I :" + nick + "!*@*" + CRLF;
 			if (this->_modes.find('I') == std::string::npos)
 				_modes += "I";
 			this->sendAll(msg);
@@ -103,7 +104,7 @@ void				Channel::exception(User &owner, std::string nick, char type)
 				return;
 			_excBanList.insert(nick);
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + " +e :" + nick + "!*@*" + "\r\n";
+								" MODE " + _name + " +e :" + nick + "!*@*" + CRLF;
 			this->sendAll(msg);
 			if (this->_modes.find('e') == std::string::npos)
 				_modes += "e";
@@ -115,7 +116,7 @@ void				Channel::unException(User &owner, std::string nick, char type)
 {
 	std::string msg;
 	if (!this->isOperator(owner))
-		return (_server->getHandler().numeric_reply(482, owner, _name));
+		return (_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name));
 	switch (type)
 	{
 	case 'I':
@@ -123,7 +124,7 @@ void				Channel::unException(User &owner, std::string nick, char type)
 				return;
 			_excInviteList.erase(nick);
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + " -I :" + nick + "!*@*" + "\r\n";
+								" MODE " + _name + " -I :" + nick + "!*@*" + CRLF;
 			this->sendAll(msg);
 			if (_excInviteList.empty())
 				this->delMode('I');
@@ -134,7 +135,7 @@ void				Channel::unException(User &owner, std::string nick, char type)
 				return;
 			_excBanList.erase(nick);
 			msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-								" MODE " + _name + " -e :" + nick + "!*@*" + "\r\n";
+								" MODE " + _name + " -e :" + nick + "!*@*" + CRLF;
 			this->sendAll(msg);
 			if (_excBanList.empty())
 				this->delMode('e');
@@ -187,7 +188,7 @@ bool				Channel::addMode(User &owner, char m, char mode, std::string param)
 		case 'n':
 			return modeNOBURINI(owner, mode);
 	}
-	_server->getHandler().numeric_reply(472, owner, std::string(1, m));
+	_server->getHandler().numeric_reply(ERR_UNKNOWNMODE, owner, std::string(1, m));
 	return false;
 }
 
@@ -196,14 +197,14 @@ bool				Channel::modeNOBURINI(User &owner, char mode)
 	std::string msg;
 	std::cout << "NOBURINI\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (mode == '+')
 	{
 		if (this->_modes.find('n') != std::string::npos)
 			return false;
 		_modes += "n";
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " +n" + "\r\n";
+							" MODE " + _name + " +n" + CRLF;
 		this->sendAll(msg);	
 	}
 	else
@@ -212,7 +213,7 @@ bool				Channel::modeNOBURINI(User &owner, char mode)
 			return false;
 		this->delMode('n');
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " -n" + "\r\n";
+							" MODE " + _name + " -n" + CRLF;
 		this->sendAll(msg);
 	}
 	return false;
@@ -223,14 +224,14 @@ bool				Channel::modeTOPIC(User &owner, char mode)
 	std::string msg;
 	std::cout << "SECRET\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (mode == '+')
 	{
 		if (this->_modes.find('t') != std::string::npos)
 			return false;
 		_modes += "t";
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " +t" + "\r\n";
+							" MODE " + _name + " +t" + CRLF;
 		this->sendAll(msg);	
 	}
 	else
@@ -239,7 +240,7 @@ bool				Channel::modeTOPIC(User &owner, char mode)
 			return false;
 		this->delMode('t');
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " -t" + "\r\n";
+							" MODE " + _name + " -t" + CRLF;
 		this->sendAll(msg);
 	}
 	return false;
@@ -250,14 +251,14 @@ bool				Channel::modeSECRET(User &owner, char mode)
 	std::string msg;
 	std::cout << "SECRET\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (mode == '+')
 	{
 		if (this->_modes.find('s') != std::string::npos)
 			return false;
 		_modes += "s";
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " +s" + "\r\n";
+							" MODE " + _name + " +s" + CRLF;
 		this->sendAll(msg);	
 	}
 	else
@@ -266,7 +267,7 @@ bool				Channel::modeSECRET(User &owner, char mode)
 			return false;
 		this->delMode('s');
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " -s" + "\r\n";
+							" MODE " + _name + " -s" + CRLF;
 		this->sendAll(msg);
 	}
 	return false;
@@ -277,14 +278,14 @@ bool				Channel::modeMODERATE(User &owner, char mode)
 	std::string msg;
 	std::cout << "MODERATE\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (mode == '+')
 	{
 		if (this->_modes.find('m') != std::string::npos)
 			return false;
 		_modes += "m";
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " +m" + "\r\n";
+							" MODE " + _name + " +m" + CRLF;
 		this->sendAll(msg);	
 	}
 	else
@@ -293,7 +294,7 @@ bool				Channel::modeMODERATE(User &owner, char mode)
 			return false;
 		this->delMode('m');
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " -m" + "\r\n";
+							" MODE " + _name + " -m" + CRLF;
 		this->sendAll(msg);
 	}
 	return false;
@@ -304,18 +305,18 @@ bool				Channel::modeINVITE(User &owner, char mode)
 	std::string msg;
 	std::cout << "INVITE\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (mode == '-' && _modes.find('i') != std::string::npos)
 	{
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " -i" + "\r\n";
+							" MODE " + _name + " -i" + CRLF;
 		this->sendAll(msg);
 		this->delMode('i');
 	}
 	else if (_modes.find('i') == std::string::npos)
 	{
 		msg =	":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " +i" + "\r\n";
+							" MODE " + _name + " +i" + CRLF;
 		this->sendAll(msg);
 		if (this->_modes.find('i') == std::string::npos)
 			_modes += "i";
@@ -382,7 +383,7 @@ bool				Channel::modeOPERATOR(User &owner, char mode, std::string param)
 	std::string msg;
 	std::cout << "SET OPERATOR\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (param == "")
 		return false;
 	else 
@@ -400,11 +401,11 @@ bool				Channel::modeOPERATOR(User &owner, char mode, std::string param)
 			else
 				_users[i].first = '\0';
 			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-						" MODE " + _name + " " + mode +"o " + param +"\r\n";
+						" MODE " + _name + " " + mode +"o " + param + CRLF;
 			this->sendAll(msg);
 		}
 		else
-			_server->getHandler().numeric_reply(401, owner, param);
+			_server->getHandler().numeric_reply(ERR_NOSUCHNICK, owner, param);
 	}
 	return true;
 }
@@ -414,7 +415,7 @@ bool				Channel::modeLIMIT(User &owner, char mode, std::string param)
 	std::string msg;
 	std::cout << "LIMIT\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	else if (mode == '+' && param != "")
 	{
 		int limit = std::atoi(param.c_str());
@@ -422,7 +423,7 @@ bool				Channel::modeLIMIT(User &owner, char mode, std::string param)
 		{
 			_limit = limit;
 			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-						" MODE " + _name + " +l :" + std::to_string(_limit) + "\r\n";
+						" MODE " + _name + " +l :" + std::to_string(_limit) + CRLF;
 			this->sendAll(msg);
 			if (this->_modes.find('l') == std::string::npos)
 				_modes += "l";
@@ -434,7 +435,7 @@ bool				Channel::modeLIMIT(User &owner, char mode, std::string param)
 		this->delMode('l');
 		_limit = INT32_MAX;
 		msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-						" MODE " + _name + ": -l\r\n";
+						" MODE " + _name + ": -l" + CRLF;
 		this->sendAll(msg);
 	}
 	return false;			
@@ -444,11 +445,11 @@ bool				Channel::modeKEY(User &owner, char mode, std::string param)
 	std::string msg;
 	std::cout << "KEY\n";
 	if (!this->isOperator(owner))
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 	if (param == "" )
 	{
 		msg = _name + " k * :You must specify a parameter.";
-		_server->getHandler().numeric_reply(696,owner, msg);
+		_server->getHandler().numeric_reply(ERR_INVALIDMODEPARAM,owner, msg);
 		return false;
 	}
 	else if (mode == '-')
@@ -458,7 +459,7 @@ bool				Channel::modeKEY(User &owner, char mode, std::string param)
 			_key = "";
 			this->delMode('k');
 			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " -k :"+ param + "\r\n";
+							" MODE " + _name + " -k :"+ param + CRLF;
 			this->sendAll(msg);
 		}
 		return true;
@@ -468,7 +469,7 @@ bool				Channel::modeKEY(User &owner, char mode, std::string param)
 		if (_key == "")
 		{
 			msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" MODE " + _name + " +k :"+ param + "\r\n";
+							" MODE " + _name + " +k :"+ param + CRLF;
 			this->sendAll(msg);
 			if (this->_modes.find('k') == std::string::npos)
 				_modes += "k";
@@ -480,15 +481,15 @@ bool				Channel::modeKEY(User &owner, char mode, std::string param)
 void				Channel::invite(User &owner, std::string nick)
 {
 	if (!this->isInChannel(owner))
-		return (_server->getHandler().numeric_reply(442, owner, _name));
+		return (_server->getHandler().numeric_reply(ERR_NOTONCHANNEL, owner, _name));
 	if (!this->isOperator(owner))
-		return (_server->getHandler().numeric_reply(482, owner, _name));
+		return (_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name));
 	if (this->isInChannel(nick))
-		return (_server->getHandler().numeric_reply(443, owner, nick + " "+ _name));
+		return (_server->getHandler().numeric_reply(ERR_USERONCHANNEL, owner, nick + " "+ _name));
 	_inviteList.insert(nick);
-	_server->getHandler().numeric_reply(341, owner, nick + " "+ _name);
+	_server->getHandler().numeric_reply(RPL_INVITING, owner, nick + " "+ _name);
 	std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + '@' + owner.getHost() + 
-							" INVITE " + nick + " :"+ _name + "\r\n";
+							" INVITE " + nick + " :"+ _name + CRLF;
 	_server->send_msg(msg, nick);
 	
 	
@@ -523,23 +524,23 @@ bool				Channel::canJoin(User const &owner) const
 {
 	if (this->isInChannel(owner))
 	{
-		_server->getHandler().numeric_reply(443, owner, owner.getNick() + " " + _name);
+		_server->getHandler().numeric_reply(ERR_USERONCHANNEL, owner, owner.getNick() + " " + _name);
 		std::cout << "User: " + owner.getNick() + ":" + owner.getUsername() + " is already in the channel!\n";
 		return (false);
 	}
 	if (_modes.find('i') != std::string::npos && !this->isInvited(owner))
 	{
-		_server->getHandler().numeric_reply(473, owner, _name);
+		_server->getHandler().numeric_reply(ERR_INVITEONLYCHAN, owner, _name);
 		return false;
 	}
 	if (_modes.find('l') != std::string::npos && this->isFull())
 	{
-		_server->getHandler().numeric_reply(471, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANNELISFULL, owner, _name);
 		return false;
 	}
 	if (this->isBanned(owner) && (_inviteList.find(owner.getNick()) == _inviteList.end()))
 	{
-		_server->getHandler().numeric_reply(474, owner, _name);
+		_server->getHandler().numeric_reply(ERR_BANNEDFROMCHAN, owner, _name);
 		return false;
 	}
 	return (true);
@@ -549,18 +550,18 @@ bool				Channel::canSendMsg(User const &owner) const
 {
 	if (_modes.find('n') != std::string::npos && !this->isInChannel(owner))
 	{
-		_server->getHandler().numeric_reply(404, owner, _name);
-		_server->getHandler().numeric_reply(442, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CANNOTSENDTOCHAN, owner, _name);
+		_server->getHandler().numeric_reply(ERR_NOTONCHANNEL, owner, _name);
 		return false;
 	}
 	if (this->isBanned(owner))
 	{
-		_server->getHandler().numeric_reply(474, owner, _name);
+		_server->getHandler().numeric_reply(ERR_BANNEDFROMCHAN, owner, _name);
 		return false;
 	}
 	if (_modes.find('m') != std::string::npos && !this->isOperator(owner))
 	{
-		_server->getHandler().numeric_reply(482, owner, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, owner, _name);
 		return false;
 	}
 	return (true);
@@ -578,9 +579,9 @@ void				Channel::sendBanList(User &owner) 		const
 	for (iter_excIB_list i = _banList.begin(); i != _banList.end();i++)
 	{
 		std::string msg = _name + " " + *i;
-		_server->getHandler().numeric_reply(367, owner, msg);
+		_server->getHandler().numeric_reply(RPL_BANLIST, owner, msg);
 	}
-	_server->getHandler().numeric_reply(368, owner, _name);
+	_server->getHandler().numeric_reply(RPL_ENDOFBANLIST, owner, _name);
 
 }
 void				Channel::sendExeInviteList(User &owner)	const
@@ -589,9 +590,9 @@ void				Channel::sendExeInviteList(User &owner)	const
 	for (iter_excIB_list i = _excInviteList.begin(); i != _excInviteList.end();i++)
 	{
 		std::string msg = _name + " " + *i;
-		_server->getHandler().numeric_reply(346, owner, msg);
+		_server->getHandler().numeric_reply(RPL_INVITELIST, owner, msg);
 	}
-	_server->getHandler().numeric_reply(347, owner, _name);
+	_server->getHandler().numeric_reply(RPL_ENDOFINVITELIST, owner, _name);
 }
 
 void				Channel::sendExeBanList(User &owner)	const
@@ -600,9 +601,9 @@ void				Channel::sendExeBanList(User &owner)	const
 	for (iter_excIB_list i = _excBanList.begin(); i != _excBanList.end();i++)
 	{
 		std::string msg = _name + " " + *i;
-		_server->getHandler().numeric_reply(348, owner, msg);
+		_server->getHandler().numeric_reply(RPL_EXCEPTLIST, owner, msg);
 	}
-	_server->getHandler().numeric_reply(349, owner, _name);
+	_server->getHandler().numeric_reply(RPL_ENDOFEXCEPTLIST, owner, _name);
 }
 
 void			Channel::join_user(User &user, std::string key , char status = 0)
@@ -615,16 +616,16 @@ void			Channel::join_user(User &user, std::string key , char status = 0)
 		user.addChannel(_name);
 		_inviteList.erase(user.getNick());
 		_users.push_back(std::pair<char,User *>(status, &user));
-		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + "\r\n";
+		std::string msg = ":" + user.getNick() + "!" +  user.getUsername() + '@' + user.getHost() + " JOIN :" + _name + CRLF;
 		this->sendAll(msg);
 		if (!_topic.empty())
-			_server->getHandler().numeric_reply(332, user, _name);
-		_server->getHandler().numeric_reply(353, user, "= "+_name + " :"+ this->getStrUsers());
-		_server->getHandler().numeric_reply(366, user, _name);
+			_server->getHandler().numeric_reply(RPL_TOPIC, user, _name);
+		_server->getHandler().numeric_reply(RPL_NAMREPLY, user, "= "+_name + " :"+ this->getStrUsers());
+		_server->getHandler().numeric_reply(RPL_ENDOFNAMES, user, _name);
 		return ;
 	}
 	else
-		_server->getHandler().numeric_reply(475, user, _name);
+		_server->getHandler().numeric_reply(ERR_BADCHANNELKEY, user, _name);
 }
 
 void	Channel::part_user(User &user)
@@ -733,24 +734,24 @@ void			Channel::kick(User &user, std::list<std::string> & users, std::string msg
 { 
 	if (!this->isInChannel(user))
 	{
-		_server->getHandler().numeric_reply(442, user, _name);
+		_server->getHandler().numeric_reply(ERR_NOTONCHANNEL, user, _name);
 		return;
 	}
 	if (!isOperator(user))
 	{
-		_server->getHandler().numeric_reply(482, user, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, user, _name);
 		return;
 	}
 	for (std::list<std::string>::iterator i = users.begin(); i != users.end(); i++)
 	{
 		if (this->isInChannel(*i))
 		{
-			msg = ":" + user.getNick() + "!" +  user.getUsername() + " KICK "+ _name+ " " + *i +" :" + msg + "\r\n";
+			msg = ":" + user.getNick() + "!" +  user.getUsername() + " KICK "+ _name+ " " + *i +" :" + msg + CRLF;
 			sendAll(msg);
 			this->removeUser(*i);
 		}
 		else
-			_server->getHandler().numeric_reply(441, user, *i + " " + _name);
+			_server->getHandler().numeric_reply(ERR_USERNOTINCHANNEL, user, *i + " " + _name);
 	}
 
 }
@@ -758,11 +759,11 @@ void			Channel::kick(User &user, std::list<std::string> & users, std::string msg
 void 				Channel::getTopic(User &user) const
 {
 	if(_topic == "")
-		_server->getHandler().numeric_reply(331, user, _name);
+		_server->getHandler().numeric_reply(RPL_NOTOPIC, user, _name);
 	else 
 	{
-		_server->getHandler().numeric_reply(332, user, _name + " :"+ _topic);
-		_server->getHandler().numeric_reply(333, user, _name + " " + _topicSetter + " " + getTopicTime());
+		_server->getHandler().numeric_reply(RPL_TOPIC, user, _name + " :"+ _topic);
+		_server->getHandler().numeric_reply(RPL_TOPICWHOTIME, user, _name + " " + _topicSetter + " " + getTopicTime());
 	}
 }
 
@@ -770,9 +771,9 @@ void 				Channel::getTopic(User &user) const
 void				Channel::setTopic(User &user, std::string &topic)
 {
 	if (!this->isInChannel(user))
-		_server->getHandler().numeric_reply(442, user, _name);
+		_server->getHandler().numeric_reply(ERR_NOTONCHANNEL, user, _name);
 	else if (_modes.find('t') != std::string::npos &&  !isOperator(user))
-		_server->getHandler().numeric_reply(482, user, _name);
+		_server->getHandler().numeric_reply(ERR_CHANOPRIVSNEEDED, user, _name);
 	else
 	{
 		_topic = topic;

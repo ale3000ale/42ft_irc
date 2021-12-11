@@ -64,9 +64,9 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 	if (!owner.is_passed() && this->_command != "PASS")
 		return ;
 	else if (owner.is_passed() && !owner.is_registered() && this->_command != "NICK" && this->_command != "USER")
-		return numeric_reply(451, owner, this->_command); // ERR_NOTREGISTERED
+		return numeric_reply(ERR_NOTREGISTERED, owner, this->_command);
 	if (this->_handlers.find(this->_command) == this->_handlers.end())
-		numeric_reply(421, owner, this->_command); // ERR_UNKNOWNCOMMAND
+		numeric_reply(ERR_UNKNOWNCOMMAND, owner, this->_command);
 	else
 		(*this.*(this->_handlers[this->_command]))(owner);
 }
@@ -74,31 +74,31 @@ void CommandHandler::handle(std::string cmd_line, User& owner)
 void CommandHandler::_handlePASS(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
-		return numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
+		return numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command);
 	if (owner.is_registered())
-		return numeric_reply(462, owner); //ERR_ALREADYREGISTERED
+		return numeric_reply(ERR_ALREADYREGISTERED, owner);
 	if (this->_server.checkPass(this->_params.front()))
 		owner.set_passed();
 	else
-		numeric_reply(464, owner); // ERR_PASSWDMISMATCH
+		numeric_reply(ERR_PASSWDMISMATCH, owner);
 }
 
 void CommandHandler::_handleNICK(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
-		return numeric_reply(431, owner); // ERR_NONICKNAMEGIVEN
+		return numeric_reply(ERR_NONICKNAMEGIVEN, owner); 
 	std::string& nick = this->_params.front();
 	std::vector<User*> const & users = this->_server.getUserList();
 	for (u_int i = 0; i < users.size(); i++)
 	{
 		if (*users[i] == nick)
-			return numeric_reply(433, owner, nick); ; // ERR_NICKNAMEINUS
+			return numeric_reply(ERR_NICKNAMEINUSE, owner, nick); 
 	}
 	std::string old_nick = owner.getNick();
 	owner.setNick(nick);
 	if (old_nick != "")
 	{
-		std::string msg = ":" + old_nick + "!" + owner.getUsername() + "@" + owner.getHost() + " NICK :" + owner.getNick() + "\r\n";
+		std::string msg = ":" + old_nick + "!" + owner.getUsername() + "@" + owner.getHost() + " NICK :" + owner.getNick() + CRLF;
 		this->_server.send_msg(msg, owner);
 	}
 	if (!owner.is_registered() && !owner.getUsername().empty())
@@ -108,12 +108,12 @@ void CommandHandler::_handleNICK(User& owner)
 void CommandHandler::_handleUSER(User& owner) 
 {
 	if (this->_params.size() != 4)
-		return numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
+		return numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command);
 	if (owner.is_registered())
-		return numeric_reply(462, owner); //ERR_ALREADYREGISTERED
+		return numeric_reply(ERR_ALREADYREGISTERED, owner);
 	std::string username = this->_params.front();
 	if (username.empty()) // i think this case wont ever occur
-		return numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS (461)
+		return numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command);
 	std::string realname = this->_params.back();
 	owner.setUsername(username);
 	owner.setRealname(realname);
@@ -123,41 +123,41 @@ void CommandHandler::_handleUSER(User& owner)
 
 void CommandHandler::_handleMOTD(User& owner)
 {
-	if (this->_command == "MOTD" && this->_params.size() && this->_params.front() != "myIRCServer")
-		return numeric_reply(402, owner, this->_params.front()); // ERR_NOSUCHSERVER
+	if (this->_command == "MOTD" && this->_params.size() && this->_params.front() != SERV_NAME)
+		return numeric_reply(ERR_NOSUCHSERVER, owner, this->_params.front());
 	std::vector<std::string> motd = this->_server.getMotd();
 	if (!motd.size())
-		return numeric_reply(422, owner); // ERR_NOMOTD
-	numeric_reply(375, owner); // RPL_MOTDSTART
+		return numeric_reply(ERR_NOMOTD, owner);
+	numeric_reply(RPL_MOTDSTART, owner); 
 	for (u_int i=0; i < motd.size(); i++)
-		numeric_reply(372, owner, motd[i]); // RPL_MOTD
-	numeric_reply(376, owner); // RPL_ENDOFMOTD
+		numeric_reply(RPL_MOTD, owner, motd[i]);
+	numeric_reply(RPL_ENDOFMOTD, owner); 
 }
 
 void CommandHandler::_handleLUSERS(User& owner)
 {
 	int user_count = this->_server.getUserList().size();
 	int chan_count = this->_server.getchannelList().size();
-	numeric_reply(251, owner, std::to_string(user_count)); // RPL_LUSERCLIENT
-	numeric_reply(252, owner); // RPL_LUSEROP
-	numeric_reply(254, owner, std::to_string(chan_count)); // RPL_LUSERCHANNELS
-	numeric_reply(255, owner, std::to_string(user_count)); // RPL_LUSERME
+	numeric_reply(RPL_LUSERCLIENT, owner, std::to_string(user_count));
+	numeric_reply(RPL_LUSEROP, owner);
+	numeric_reply(RPL_LUSERCHANNELS, owner, std::to_string(chan_count)); 
+	numeric_reply(RPL_LUSERME, owner, std::to_string(user_count)); 
 }
 
 void CommandHandler::_handlePING(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
-		return numeric_reply(461, owner, this->_command); // ERR_NEEDMOREPARAMS
-	std::string msg = ":myIRCServer PONG myIRCServer :" + this->_params.front() + "\r\n";
+		return numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command);
+	std::string msg = ":" + SERV_NAME + " PONG " + SERV_NAME + " :" + this->_params.front() + CRLF;
 	this->_server.send_msg(msg, owner);
 }
 
 void CommandHandler::_handlePRIVMSG(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
-		return numeric_reply(411, owner, this->_command); // ERR_NORECIPIENT
+		return numeric_reply(ERR_NORECIPIENT, owner, this->_command);
 	if (this->_params.size() == 1)
-		return numeric_reply(412, owner); // ERR_NOTEXTTOSEND
+		return numeric_reply(ERR_NOTEXTTOSEND, owner);
 
 	std::string targets = this->_params.front();
 	_iterator it = ++this->_params.begin();
@@ -169,7 +169,7 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 	{
 		int pos = targets.find(",");
 		std::string curr_target = targets.substr(0, pos);
-		std::string msg = head + curr_target + text + "\r\n";
+		std::string msg = head + curr_target + text + CRLF;
 		int rv;
 		if (curr_target[0] == '#')
 			rv = this->_server.send_msg(msg, curr_target, owner);
@@ -186,19 +186,19 @@ void CommandHandler::_handleAWAY(User& owner)
 	if (!this->_params.size())
 	{
 		owner.setAway(false);
-		numeric_reply(305, owner); // RPL_UNAWAY
+		numeric_reply(RPL_UNAWAY, owner);
 	}
 	else
 	{
 		owner.setAway(true, this->_params.front());
-		numeric_reply(306, owner); // RPL_NOWAWAY
+		numeric_reply(RPL_NOWAWAY, owner);
 	}
 }
 
 void CommandHandler::_handleJOIN(User& owner)
 {
 	if (_params.empty())
-		return ; //ERR_NEEDMOREPARAMS (461)
+		return numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command);
 	std::list<std::string> names;
 	std::list<std::string> keys;
 	int pos;
@@ -222,7 +222,7 @@ void CommandHandler::_handleJOIN(User& owner)
 		_params.pop_front();
 	}
 	if (names.front()[0] != '#')
-		return (numeric_reply(403,owner, names.front()));
+		return (numeric_reply(ERR_NOSUCHCHANNEL, owner, names.front()));
 	while(!names.empty())
 	{
 		char stat  = 0;
@@ -244,7 +244,7 @@ void CommandHandler::_handleJOIN(User& owner)
 void CommandHandler::_handlePART(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
-		return (numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
+		return (numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command)); // ERR_NEEDMOREPARAMS
 	std::string targets = this->_params.front();
 	std::string reason;
 	if (this->_params.size() > 1 &&  this->_params.front() != "")
@@ -260,15 +260,15 @@ void CommandHandler::_handlePART(User& owner)
 	{
 		int pos = targets.find(",");
 		std::string curr_target = targets.substr(0, pos);
-		std::string msg = head + curr_target + reason + "\r\n";
+		std::string msg = head + curr_target + reason + CRLF;
 
 		if (!this->_server.exist_channel(curr_target))
-			numeric_reply(403, owner, curr_target); // ERR_NOSUCHCHANNEL
+			numeric_reply(ERR_NOSUCHCHANNEL, owner, curr_target);
 		else
 		{
 			Channel& tmp_chan = this->_server.get_channel(curr_target);
 			if (!tmp_chan.isInChannel(owner))
-				numeric_reply(442, owner, curr_target); // ERR_NOTONCHANNEL
+				numeric_reply(ERR_NOTONCHANNEL, owner, curr_target);
 			else
 			{
 				// send to owner and to other inside channel
@@ -286,9 +286,9 @@ void CommandHandler::_handlePART(User& owner)
 void CommandHandler::_handleQUIT(User& owner)
 {
 	std::string reason = (_params.size() == 1) ? _params.front() : owner.getNick();
-	std::string msg = "ERROR :Closing Link: " + owner.getNick() + "[" + owner.getHost() + "] (Quit: " + reason + ")\r\n";
+	std::string msg = "ERROR :Closing Link: " + owner.getNick() + "[" + owner.getHost() + "] (Quit: " + reason + ")" + CRLF;
 	this->_server.send_msg(msg, owner);
-	msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " QUIT :Quit: " + reason + "\r\n";
+	msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " QUIT :Quit: " + reason + CRLF;
 	this->_server.sendAllChans(msg, owner);
 	std::cout<<"HANDLE QUIT :\n";
 	
@@ -308,10 +308,10 @@ void CommandHandler::_handleWHO(User& owner)
 			{														
 				msg = (us[i]->getChannels().empty() ? "* " : us[i]->getChannels().back()+ " ") + us[i]->getUsername() + " " + us[i]->getHost() + " myIRCServer " + us[i]->getNick() +
 				 " H :0 "  + us[i]->getRealname();
-				numeric_reply(352, owner, msg);
+				numeric_reply(RPL_WHOREPLY, owner, msg);
 			}
 		}
-		numeric_reply(315, owner, "*");
+		numeric_reply(RPL_ENDOFWHO, owner, "*");
 	}
 	else if(_server.exist_channel(_params.front()))
 	{
@@ -320,29 +320,20 @@ void CommandHandler::_handleWHO(User& owner)
 		std::string header = ch.getName(true) + " ";
 		for (size_t i =0 ;i != users.size(); i++)
 		{
-			// TODO: alex vedi un po'se va bene
-			msg = header + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() + " H";
+			msg = header + users[i].second->getUsername() + " " +  users[i].second->getHost() + " " + SERV_NAME + " " + users[i].second->getNick() + " H";
 			if (users[i].first)
 				msg += users[i].first;
 			msg += " :0 " + users[i].second->getRealname();
-			/*msg = header + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
-				" H"; + users[i].first + " :0 " + users[i].second->getRealname();
-			else
-				msg = ch.getName(true) + " " + users[i].second->getUsername() + " " +  users[i].second->getHost() + " myIRCServer " + users[i].second->getNick() +
-				" H :0 " + users[i].second->getRealname();*/
-			numeric_reply(352, owner, msg);
+			numeric_reply(RPL_WHOREPLY, owner, msg);
 		}
-		numeric_reply(315, owner, ch.getName(true));
+		numeric_reply(RPL_ENDOFWHO, owner, ch.getName(true));
 	}
 }
 
 void	CommandHandler::_handleKICK(User &owner)
 {
 	if (_params.size() < 2)
-	{
-		numeric_reply(461, owner, "KICK");
-		return;
-	}
+		return numeric_reply(ERR_NEEDMOREPARAMS, owner, "KICK");
 	std::list<std::string> channels;
 	std::list<std::string> users;
 	int pos;
@@ -378,7 +369,7 @@ void	CommandHandler::_handleKICK(User &owner)
 			channels.pop_front();
 		}
 		else
-			numeric_reply(403, owner, channels.front());
+			numeric_reply(ERR_NOSUCHCHANNEL, owner, channels.front());
 	}
 }
 
@@ -386,18 +377,18 @@ void	CommandHandler::_handleKICK(User &owner)
 void	CommandHandler::_handleMODE(User& owner)
 {
 	if (!this->_params.size() || this->_params.front() == "")
-		return (numeric_reply(461, owner, this->_command)); // ERR_NEEDMOREPARAMS
+		return (numeric_reply(ERR_NEEDMOREPARAMS, owner, this->_command));
 	std::string target = this->_params.front();
 	if (target[0] == '#') // CHANNEL MODE
 	{
 		if (!_server.exist_channel(target))
-			return (numeric_reply(403, owner, target)); // ERR_NOSUCHCHANNEL
+			return (numeric_reply(ERR_NOSUCHCHANNEL, owner, target));
 		Channel &ch = _server.get_channel(target);
 		if (this->_params.size() == 1 )
 		{
 			std::cout << "NO MODES\n";
-			numeric_reply(324, owner, target + " " + _server.get_channel(target).getModes()); // RPL_CHANNELMODEIS
-			numeric_reply(329, owner, target + " " + _server.get_channel(target).getCreationTime()); // RPL_CHANNELMODEIS
+			numeric_reply(RPL_CHANNELMODEIS, owner, target + " " + _server.get_channel(target).getModes());
+			numeric_reply(RPL_CHANNELMODEIS, owner, target + " " + _server.get_channel(target).getCreationTime());
 			return ;
 		}
 		_params.pop_front();
@@ -412,8 +403,6 @@ void	CommandHandler::_handleMODE(User& owner)
 				_params.pop_front();
 		}
 		std::cout << "OPERATORE\n";
-		
-		
 	}
 	else	// USER MODE
 	{
@@ -421,11 +410,11 @@ void	CommandHandler::_handleMODE(User& owner)
 		uint i=0;
 		for (; i<users.size() && users[i]->getNick() != target; i++) ;
 		if (i == users.size())
-			return (numeric_reply(401, owner, target)); // ERR_NOSUCHNICK
+			return (numeric_reply(ERR_NOSUCHNICK, owner, target));
 		if (owner.getNick() != target)
-			return (numeric_reply(502, owner)); // ERR_USERSDONTMATCH
+			return (numeric_reply(ERR_USERSDONTMATCH, owner));
 		if (this->_params.size() == 1 )
-			return (numeric_reply(221, owner, target)); // RPL_UMODEIS
+			return (numeric_reply(RPL_UMODEIS, owner, target));
 		std::string modestring = *(++(this->_params.begin()));
 		std::string msg = " ";
 		for (i=0; i<modestring.length(); i++)
@@ -434,7 +423,7 @@ void	CommandHandler::_handleMODE(User& owner)
 			if (mode == '+' || mode == '-')
 				continue;
 			if (UMODES.find(mode) == std::string::npos)
-				numeric_reply(501, owner); // ERR_UMODEUNKNOWNFLAG
+				numeric_reply(ERR_UMODEUNKNOWNFLAG, owner);
 			else if (i && modestring[i - 1] == '-')
 			{
 				owner.delMode(mode);
@@ -450,7 +439,7 @@ void	CommandHandler::_handleMODE(User& owner)
 		}
 		if (msg != " ")
 		{
-			msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " MODE " + owner.getNick() + msg + "\r\n";
+			msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " MODE " + owner.getNick() + msg + CRLF;
 			this->_server.send_msg(msg, owner);
 		}
 	}
@@ -459,9 +448,9 @@ void	CommandHandler::_handleMODE(User& owner)
 void	CommandHandler::_handleTOPIC(User& owner)
 {
 	if (_params.size() < 1 || this->_params.front() == "")
-		numeric_reply(461, owner, "TOPIC");
+		numeric_reply(ERR_NEEDMOREPARAMS, owner, "TOPIC");
 	else if (!_server.exist_channel(_params.front()))
-		numeric_reply(403, owner, _params.front());
+		numeric_reply(ERR_NOSUCHCHANNEL, owner, _params.front());
 	else 
 	{
 		Channel &ch = _server.get_channel(_params.front());
@@ -478,15 +467,15 @@ void	CommandHandler::_handleTOPIC(User& owner)
 
 void	CommandHandler::_handleLIST(User& owner)
 {
-	numeric_reply(321,owner);
+	numeric_reply(RPL_LISTSTART, owner);
 	std::string msg = "";
 	const Server::chan_type		&chs = _server.getchannelList();
 	for (Server::chan_it i = chs.cbegin(); i != chs.cend(); i++)
 	{
 		msg = (*i).second.getName(true) + " " + std::to_string((*i).second.getUserCount()) + " :[+" + (*i).second.getModes() + "] " + (*i).second.getTopic();
-		numeric_reply(322, owner, msg);
+		numeric_reply(RPL_LIST, owner, msg);
 	}
-	numeric_reply(323, owner);
+	numeric_reply(RPL_LISTEND, owner);
 }
 
 void	CommandHandler::_handleNAMES(User& owner)
@@ -497,8 +486,8 @@ void	CommandHandler::_handleNAMES(User& owner)
 			i != _server.getchannelList().cend() ; i++)
 		{
 			std::string msg = "= " + (*i).second.getName(true) + " :"+  (*i).second.getStrUsers() ;
-			numeric_reply(353,owner, msg);
-			numeric_reply(366,owner, (*i).second.getName(true));
+			numeric_reply(RPL_NAMREPLY, owner, msg);
+			numeric_reply(RPL_ENDOFNAMES, owner, (*i).second.getName(true));
 		}
 		const std::vector<User*> & users = _server.getUserList();
 		std::string msg = ":" + owner.getNick() + "!" +  owner.getUsername() + " ";
@@ -509,7 +498,7 @@ void	CommandHandler::_handleNAMES(User& owner)
 				msg +=  users[i]->getNick() + " * " ;
 			}
 		}
-		msg += "\r\n";
+		msg += CRLF;
 		_server.send_msg( msg, owner);
 	}
 }	
@@ -519,20 +508,20 @@ void		CommandHandler::_handleINVITE(User& owner)
 	std::string msg = "";
 	std::string nick;
 	if (_params.size() < 2 || _params.back() == "")
-		return (numeric_reply(461, owner, _command));
+		return (numeric_reply(ERR_NEEDMOREPARAMS, owner, _command));
 	nick = _params.front();
 	if (!_server.exist_user(_params.front()))
-		return (numeric_reply(401, owner, _params.front()));
+		return (numeric_reply(ERR_NOSUCHNICK, owner, _params.front()));
 	_params.pop_front();
 	if (!_server.exist_channel(_params.front()))
-		return (numeric_reply(403, owner, _params.front()));
+		return (numeric_reply(ERR_NOSUCHCHANNEL, owner, _params.front()));
 	Channel &ch = _server.get_channel(_params.front());
 	ch.invite(owner, nick);
 }
 
 void		CommandHandler::numeric_reply(int val, User const &owner, std::string extra) const
 {
-	std::string msg = ":myIRCServer ";
+	std::string msg = ":" + SERV_NAME + " ";
 	if (val < 10)
 	{
 		msg+= "00";
@@ -544,199 +533,199 @@ void		CommandHandler::numeric_reply(int val, User const &owner, std::string extr
 	msg += " " + owner.getNick() + " ";
 	switch (val)
 	{
-		case 1: // RPL_WELCOME
+		case RPL_WELCOME:
 			msg += ":Welcome to the Internet Relay Network ";
 			msg += owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost();
 			break;
-		case 2: // RPL_YOURHOST
-			msg += ":Your host is myIRCServer, running version IRC1.0";
+		case RPL_YOURHOST: 
+			msg += ":Your host is " + SERV_NAME + ", running version IRC1.0";
 			break;
-		case 3: // RPL_CREATED
+		case RPL_CREATED: 
 			msg += ":This server was created " + extra;
 			break;
-		case 4: // RPL_MYINFO
-			msg += "myIRCServer IRC1.0 " + UMODES + " " + CMODES;
+		case RPL_MYINFO: 
+			msg += SERV_NAME + " IRC1.0 " + UMODES + " " + CMODES;
 			break;
-		case 221: // RPL_UMODEIS
+		case RPL_UMODEIS:
 			msg += owner.getModes();
 			break;
-		case 251: // RPL_LUSERCLIENT
+		case RPL_LUSERCLIENT:
 			msg += ":There are " + extra + " users and 0 invisible on 1 servers";
 			break;
-		case 252: // RPL_LUSEROP
+		case RPL_LUSEROP:
 			msg += "0 :operator(s) online";
 			break;
-		case 254: // RPL_LUSERCHANNELS
+		case RPL_LUSERCHANNELS:
 			msg += extra + " :channels formed";
 			break;
-		case 255: // RPL_LUSERME
+		case RPL_LUSERME:
 			msg += ":I have " + extra + " clients and 1 servers";
 			break;
-		case 301: // RPL_AWAY
+		case RPL_AWAY:
 			msg += extra + " :" + owner.getAwayMsg();
 			break;
-		case 305: // RPL_UNAWAY
+		case RPL_UNAWAY:
 			msg += ":You are no longer marked as being away";
 			break;
-		case 306: // RPL_NOWAWAY
+		case RPL_NOWAWAY:
 			msg += ":You have been marked as being away";
 			break;
-		case 315: // RPL_ENDOFNAMES
+		case RPL_ENDOFWHO:
 			msg += extra + " :End of /WHO list";
 			break;
-		case 321: // RPL_LISTSTART 
+		case RPL_LISTSTART:
 			msg += "Channel :Users  Name";
 			break;
-		case 322: // RPL_LIST 
+		case RPL_LIST:
 			msg += extra;
 			break;
-		case 323: // RPL_LISTEND 
+		case RPL_LISTEND: 
 			msg += extra + " :End of /LIST";
 			break;
-		case 324: // RPL_CHANNELMODEIS 
+		case RPL_CHANNELMODEIS: 
 			msg += extra;
 			break;
-		case 329: // RPL_CREATIONTIME 
+		case RPL_CREATIONTIME:
 			msg += extra;
 			break;
-		case 331: // RPL_NOTOPIC
+		case RPL_NOTOPIC:
 			msg += extra + " :No topic is set";
 			break;
-		case 332: // RPL_TOPIC
+		case RPL_TOPIC:
 			msg += extra;
 			break;
-		case 333: // RPL_TOPICWHOTIME
+		case RPL_TOPICWHOTIME:
 			msg += extra;
 			break;
-		case 341: // RPL_INVITING
+		case RPL_INVITING:
 			msg += extra;
 			break;
-		case 346: // RPL_INVITELIST 
+		case RPL_INVITELIST: 
 			msg += extra;
 			break;
-		case 347: // RPL_ENDOFINVITELIST
+		case RPL_ENDOFINVITELIST: 
 			msg += extra  + " :End of channel invite list.";
 			break;
-		case 348: // RPL_EXCEPTLIST 
+		case RPL_EXCEPTLIST:
 			msg += extra;
 			break;
-		case 349: // RPL_ENDOFEXCEPTLIST
+		case RPL_ENDOFEXCEPTLIST:
 			msg += ":End of channel exception list.";
 			break;
-		case 352: // RPL_WHOREPLY
+		case RPL_WHOREPLY:
 			msg += extra ;
 			break;
-		case 353: // RPL_NAMREPLY 
+		case RPL_NAMREPLY:
 			msg += extra;
 			break;
-		case 366: // RPL_ENDOFNAMES 
+		case RPL_ENDOFNAMES:
 			msg += extra + " :End of /NAMES list";
 			break;
-		case 367: // RPL_BANLIST
+		case RPL_BANLIST:
 			msg += extra + " :End of channel ban list.";
 			break;
-		case 368: // RPL_ENDOFBANLIST 
+		case RPL_ENDOFBANLIST:
 			msg += extra  + " :End of /NAMES list.";
 			break;
-		case 372: // RPL_MOTD
+		case RPL_MOTD:
 			msg += ":" + extra;
 			break;
-		case 375: // RPL_MOTDSTART
-			msg += ":- myIRCServer Message of the day - ";
+		case RPL_MOTDSTART:
+			msg += ":- " + SERV_NAME + " Message of the day - ";
 			break;
-		case 376: // RPL_ENDOFMOTD
+		case RPL_ENDOFMOTD:
 			msg += ":End of /MOTD command.";
 			break;
-		case 401: // ERR_NOSUCHNICK
+		case ERR_NOSUCHNICK:
 			msg += extra + " :No such nick/channel";
 			break;
-		case 402: // ERR_NOSUCHSERVER
+		case ERR_NOSUCHSERVER:
 			msg += extra + " :No such server";
 			break;
-		case 403: // ERR_NOSUCHCHANNEL
+		case ERR_NOSUCHCHANNEL:
 			msg += extra + " :No such channel";
 			break;
-		case 404: // ERR_CANNOTSENDTOCHAN
+		case ERR_CANNOTSENDTOCHAN:
 			msg += extra + " :Cannot send to channel";
 			break;
-		case 411: // ERR_NORECIPIENT
+		case ERR_NORECIPIENT:
 			msg += ":No recipient given (" + extra + ")";
 			break;
-		case 412: // ERR_NOTEXTTOSEND
+		case ERR_NOTEXTTOSEND:
 			msg += ":No text to send";
 			break;
-		case 421: // ERR_UNKNOWNCOMMAND 
+		case ERR_UNKNOWNCOMMAND :
 			msg += extra + " :Unknown command";
 			break;
-		case 422: // ERR_NOMOTD
+		case ERR_NOMOTD:
 			msg += ":MOTD File is missing";
 			break;
-		case 431: // ERR_NONICKNAMEGIVEN
+		case ERR_NONICKNAMEGIVEN:
 			msg += ":No nickname given";
 			break;
-		case 433: // ERR_NICKNAMEINUSE 
+		case ERR_NICKNAMEINUSE:
 			msg += extra + " :Nickname is already in use"; 
 			break;
-		case 441: // ERR_USERNOTINCHANNEL  
+		case ERR_USERNOTINCHANNEL:
 			msg += extra + " :They aren't on that channel";
 			break;
-		case 442: // ERR_NOTONCHANNEL 
+		case ERR_NOTONCHANNEL:
 			msg += extra + " :You're not on that channel";
 			break;
-		case 443: // ERR_USERONCHANNEL 
+		case ERR_USERONCHANNEL:
 			msg += extra + " :is already on channel";
 			break;
-		case 451: // ERR_NOTREGISTERED
+		case ERR_NOTREGISTERED:
 			msg += extra + " :You have not registered";
 			break;
-		case 461: // ERR_NEEDMOREPARAMS
+		case ERR_NEEDMOREPARAMS:
 			msg += extra + " :Not enough parameters"; 
 			break;
-		case 462: // ERR_ALREADYREGISTERED
+		case ERR_ALREADYREGISTERED:
 			msg += ":You may not reregister"; 
 			break;
-		case 464: // ERR_PASSWDMISMATCH
+		case ERR_PASSWDMISMATCH:
 			msg += ":Password incorrect";
 			break;
-		case 471: // ERR_CHANNELISFULL
+		case ERR_CHANNELISFULL:
 			msg += extra + " :Cannot join channel (+l)";
 			break;
-		case 472: // ERR_UNKNOWNMODE
+		case ERR_UNKNOWNMODE:
 			msg += extra + " :is unknown mode char to me";
 			break;
-		case 473: // ERR_INVITEONLYCHAN
+		case ERR_INVITEONLYCHAN:
 			msg += extra + " :Cannot join channel (+i)";
 			break;
-		case 474: // ERR_BANNEDFROMCHAN
+		case ERR_BANNEDFROMCHAN:
 			msg += extra + " :Cannot join channel (+b)";
 			break;
-		case 475: // ERR_BADCHANNELKEY
+		case ERR_BADCHANNELKEY:
 			msg += extra + " :Cannot join channel (+k)";
 			break;
-		case 482: // ERR_BADCHANNELKEY
+		case ERR_CHANOPRIVSNEEDED:
 			msg += extra + " :You're not channel operator";
 			break;
-		case 501: // // ERR_UMODEUNKNOWNFLAG
+		case ERR_UMODEUNKNOWNFLAG:
 			msg += ":Unknown MODE flag";
 			break;
-		case 502: // ERR_USERSDONTMATCH
+		case ERR_USERSDONTMATCH:
 			msg += ":Cant change mode for other users";
 			break;
-		case 696: // ERR_INVALIDMODEPARAM
+		case ERR_INVALIDMODEPARAM:
 			msg += extra ;
 			break;
 	}
-	msg += "\r\n";
+	msg += CRLF;
 	this->_server.send_msg(msg, owner);
 }
 
 void	CommandHandler::_welcome_msg(User& target)
 {
 	target.set_registered();
-	numeric_reply(1, target); // RPL_WELCOME
-	numeric_reply(2, target); // RPL_YOURHOST
-	numeric_reply(3, target, this->_server.getDateTimeCreated()); // RPL_CREATED
-	numeric_reply(4, target); // RPL_MYINFO
+	numeric_reply(RPL_WELCOME, target);
+	numeric_reply(RPL_YOURHOST, target);
+	numeric_reply(RPL_CREATED, target, this->_server.getDateTimeCreated());
+	numeric_reply(RPL_MYINFO, target);
 	_handleMOTD(target);
 	_handleLUSERS(target);
 }
