@@ -175,7 +175,9 @@ void CommandHandler::_handlePRIVMSG(User& owner)
 			rv = this->_server.send_msg(msg, curr_target, owner);
 		else
 			rv = this->_server.send_msg(msg, curr_target);
-		if (rv)
+		if (rv == RPL_AWAY)
+			numeric_reply(rv, owner, curr_target + " : " + this->_server.getUser(curr_target).getAwayMsg());
+		if (rv == ERR_NOSUCHNICK)
 			numeric_reply(rv, owner, curr_target);
 		targets.erase(0, (pos != -1) ? pos + 1 : pos);
 	}
@@ -562,7 +564,7 @@ void		CommandHandler::numeric_reply(int val, User const &owner, std::string extr
 			msg += ":I have " + extra + " clients and 1 servers";
 			break;
 		case RPL_AWAY:
-			msg += extra + " :" + owner.getAwayMsg();
+			msg += extra;
 			break;
 		case RPL_UNAWAY:
 			msg += ":You are no longer marked as being away";

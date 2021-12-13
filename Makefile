@@ -93,16 +93,18 @@ $(NAME):	$(OBJS)
 			@ echo $(BGREEN) "$(NAME) compiled successfully ✅" $(COLOR_OFF)
 
 clean:
-			@ rm -f $(OBJS)
+			@ rm -rf $(OBJS_DIR)
 			@ rm -f $(OBJS_DEBUG)
 			@ rm -f $(EXTRA_CLEAN)
+			@ make clean -C ./bot/
 			@ echo $(BWHITE) "$(NAME) .o files ware successfully deleted 📃➡ 🗑" $(COLOR_OFF)
 
 fclean:		clean
-			@ rm -rf $(OBJS_DIR)
 			@ rm -rf $(OBJS_DEBUG_DIR)
 			@ rm -rf debug.dSYM
 			@ rm -f $(NAME)
+			@ rm -f insultaBOT
+			@ make fclean -C ./bot/
 			@ echo $(BWHITE) "$(NAME) file was successfully deleted 🗂 ➡🗑" $(COLOR_OFF)
 
 re:			fclean all

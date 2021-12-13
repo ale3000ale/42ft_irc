@@ -224,7 +224,7 @@ int		Server::send_msg(std::string& msg, std::string target, User const & owner)
 			return (0);
 	}
 	else
-		return (401);
+		return (ERR_NOSUCHNICK);
 	return (0);
 }
 
@@ -237,14 +237,14 @@ int		Server::send_msg(std::string& msg, std::string target) const
 		if (*_users[i] == target)
 		{
 			if (_users[i]->isAway())
-				return (301);
+				return (RPL_AWAY);
 			send_msg(msg, *_users[i]);
 			break ;
 		}
 		i++;
 	}
 	if (i == _users.size())
-		return (401);
+		return (ERR_NOSUCHNICK);
 	return 0;
 }
 

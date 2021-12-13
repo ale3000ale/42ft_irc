@@ -141,7 +141,6 @@ void	Bot::_handlePRIVMSG() const
 				sender.pop_back(); // deleting \r\n
 			}
 			msg += sender + ", " + insult + CRLF;
-			std::cout<<"TEST: " + msg;
 		}
 	}
 	if (msg != ("PRIVMSG #" + BOT_NAME + " :"))
