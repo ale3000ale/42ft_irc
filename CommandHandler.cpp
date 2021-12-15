@@ -232,7 +232,6 @@ void CommandHandler::_handleJOIN(User& owner)
 			Channel ch(names.front(), keys.front(), _server);
 			_server.add_channel(ch);
 			stat = '@';
-			ch.addMode('k');
 		}
 		Channel &chan = _server.get_channel(names.front());
 		chan.join_user(owner, keys.front(), stat);

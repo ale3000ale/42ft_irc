@@ -22,6 +22,8 @@ Channel::Channel(std::string name, Server &server) :
 Channel::Channel(std::string name, std::string key, Server &server): 
 	_name(name), _key(key), _topic(""), _server(&server)/*, _founder(us)*/
 {
+	if (!key.empty())
+		_modes += "k";
 	_creationTime = std::time(nullptr);
 	_topicTime = std::time(nullptr);
 	_limit = INT32_MAX;
