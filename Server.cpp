@@ -58,7 +58,6 @@ void Server::run()
 			throw std::runtime_error(strerror(errno));
 		for(u_int i = 0; i < this->_pfds.size(); i++)
 		{
-			//std::cout<<i<<"\n";
 			// Check if someone's ready to read
 			if (this->_pfds[i].revents & POLLIN)
 			{

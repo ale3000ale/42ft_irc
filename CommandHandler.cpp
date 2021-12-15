@@ -57,7 +57,6 @@ void CommandHandler::_parse_cmd(std::string cmd_line)
 
 void CommandHandler::handle(std::string cmd_line, User& owner)
 {
-	std::cout<<"command: "<<cmd_line<<std::endl;
 	_parse_cmd(cmd_line);
 	if (this->_command.empty())
 		return ;
@@ -233,9 +232,9 @@ void CommandHandler::_handleJOIN(User& owner)
 			Channel ch(names.front(), keys.front(), _server);
 			_server.add_channel(ch);
 			stat = '@';
+			ch.addMode('k');
 		}
 		Channel &chan = _server.get_channel(names.front());
-		std::cout << "JOINING "<< chan.getName() << " key " << chan.getKey() << std::endl;
 		chan.join_user(owner, keys.front(), stat);
 		if (!keys.empty())
 			keys.pop_front();
@@ -292,7 +291,6 @@ void CommandHandler::_handleQUIT(User& owner)
 	this->_server.send_msg(msg, owner);
 	msg = ":" + owner.getNick() + "!" + owner.getUsername() + "@" + owner.getHost() + " QUIT :Quit: " + reason + CRLF;
 	this->_server.sendAllChans(msg, owner);
-	std::cout<<"HANDLE QUIT :\n";
 	
 	this->_server.deleteUser(owner.getNick());
 }
@@ -388,23 +386,19 @@ void	CommandHandler::_handleMODE(User& owner)
 		Channel &ch = _server.get_channel(target);
 		if (this->_params.size() == 1 )
 		{
-			std::cout << "NO MODES\n";
-			numeric_reply(RPL_CHANNELMODEIS, owner, target + " " + _server.get_channel(target).getModes());
-			numeric_reply(RPL_CHANNELMODEIS, owner, target + " " + _server.get_channel(target).getCreationTime());
+			numeric_reply(RPL_CHANNELMODEIS, owner, target + " +" + _server.get_channel(target).getModes());
+			numeric_reply(RPL_CREATIONTIME, owner, target + " " + _server.get_channel(target).getCreationTime());
 			return ;
 		}
 		_params.pop_front();
 		std::string mode = _params.front();
 		_params.pop_front();
 		char type = (mode[0] == '-' || mode[0] == '+') ? mode[0] : 0;
-		std::cout << "NEW MODE |" + mode + "| " <<  type << " TYPE != 0 "<<(type != 0)<<" \n";
 		for (size_t i = (type != 0); i < mode.size(); i++)
 		{
-			std::cout << "MODE " + std::string(1,mode[i]) + " PARAMS "+ _params.front() + "\n";
 			if (ch.addMode(owner, mode[i], type, _params.front()))
 				_params.pop_front();
 		}
-		std::cout << "OPERATORE\n";
 	}
 	else	// USER MODE
 	{

@@ -54,6 +54,7 @@ class Channel
 		bool				isInChannel(User const & user) const;
 		bool				isInChannel(std::string const & nick) const;
 		bool				addMode(User &owner, char m, char mode, std::string param = "");
+		void				addMode(char mode);
 		void				kick(User &user, std::list<std::string> &users, std::string msg = "Because me stai sul cazzo");
 		bool				isOperator(User const &user) const;
 		bool				isOperator(std::string const &user) const;
